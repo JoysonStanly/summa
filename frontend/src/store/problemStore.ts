@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { problemsApi, type Problem, type ProblemStatus, type SubmissionResult } from '../services/api';
+import { problemService, type Problem, type Submission } from '@/features/problems/services/problemService';
 
 interface EditorConfig {
   theme: string;
@@ -18,15 +18,10 @@ interface ProblemState {
   isLoading: boolean;
   isSubmitting: boolean;
   error: string | null;
-  lastSubmission: {
-    status: ProblemStatus | null;
-    runtime: string;
-    memory: string;
-    message?: string;
-  };
+  lastSubmission: Submission | null;
   
   // Actions
-  fetchProblems: (filters?: { difficulty?: string; tags?: string[] }) => Promise<void>;
+  fetchProblems: (filters?: { difficulty?: string; topic?: string; search?: string }) => Promise<void>;
   fetchProblem: (problemId: string) => Promise<void>;
   setCurrentProblem: (problemId: string) => void;
   updateEditorContent: (problemId: string, content: string) => void;
@@ -34,13 +29,7 @@ interface ProblemState {
   setLanguageForProblem: (problemId: string, language: string) => void;
   getLanguageForProblem: (problemId: string) => string | undefined;
   setSubmitting: (isSubmitting: boolean) => void;
-  submitSolution: (problemId: string, code: string, language: string) => Promise<SubmissionResult>;
-  setSubmissionResult: (result: {
-    status: ProblemStatus;
-    runtime: string;
-    memory: string;
-    message?: string;
-  }) => void;
+  submitSolution: (problemId: string, code: string, language: string) => Promise<Submission>;
   resetLastSubmission: () => void;
 }
 
@@ -62,17 +51,13 @@ export const useProblemStore = create<ProblemState>()((set, get) => ({
   isLoading: false,
   isSubmitting: false,
   error: null,
-  lastSubmission: {
-    status: null,
-    runtime: '0ms',
-    memory: '0MB',
-  },
+  lastSubmission: null,
   
   // Actions
-  fetchProblems: async (filters?: { difficulty?: string; tags?: string[] }) => {
+  fetchProblems: async (filters?) => {
     set({ isLoading: true, error: null });
     try {
-      const problems = await problemsApi.getProblems(filters);
+      const problems = await problemService.getProblems(filters);
       set({ problems, isLoading: false });
     } catch (error) {
       set({ 
@@ -85,7 +70,7 @@ export const useProblemStore = create<ProblemState>()((set, get) => ({
   fetchProblem: async (problemId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const problem = await problemsApi.getProblem(problemId);
+      const problem = await problemService.getProblem(problemId);
       set({ 
         currentProblem: problem,
         currentProblemId: problemId,
@@ -148,12 +133,16 @@ export const useProblemStore = create<ProblemState>()((set, get) => ({
   submitSolution: async (problemId: string, code: string, language: string) => {
     set({ isSubmitting: true, error: null });
     try {
-      const result = await problemsApi.submitSolution(problemId, code, language);
+      const submission = await problemService.submitSolution({
+        problemId,
+        code,
+        language
+      });
       set({ 
-        lastSubmission: result,
+        lastSubmission: submission,
         isSubmitting: false 
       });
-      return result;
+      return submission;
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to submit solution', 
@@ -163,16 +152,7 @@ export const useProblemStore = create<ProblemState>()((set, get) => ({
     }
   },
   
-  setSubmissionResult: (result) => set({ 
-    lastSubmission: result,
-    isSubmitting: false,
-  }),
-  
   resetLastSubmission: () => set({
-    lastSubmission: {
-      status: null,
-      runtime: '0ms',
-      memory: '0MB',
-    }
+    lastSubmission: null
   }),
 }));

@@ -1,171 +1,111 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { progressService, type UserProgress as APIProgress, type ProgressStats } from '@/features/profile/services/progressService';
 
-interface UserProgress {
-  completedProblems: string[];
-  solvedQuizzes: Record<string, { score: number; completedAt: string }>;
-  notes: Record<string, string>;
-  submissionStats: {
-    total: number;
-    accepted: number;
-    rejected: number;
-  };
-  streakData: {
-    currentStreak: number;
-    lastActiveDate: string;
-    maxStreak: number;
-  };
+// Local UI state (can be persisted)
+interface LocalUserState {
+  notes: Record<string, string>; // Notes are local only
 }
 
-interface UserState extends UserProgress {
-  isAuthenticated: boolean;
-  userId: string | null;
-  username: string | null;
+interface UserState extends LocalUserState {
+  // Progress data from API
+  progress: APIProgress | null;
+  stats: ProgressStats | null;
   
-  // Problem related actions
-  addCompletedProblem: (problemId: string) => void;
+  // Loading states
+  isLoadingProgress: boolean;
+  isLoadingStats: boolean;
+  error: string | null;
+  
+  // Actions
+  fetchProgress: () => Promise<void>;
+  fetchStats: () => Promise<void>;
+  updateProgress: (action: 'solved' | 'attempted' | 'streak', problemId?: string) => Promise<void>;
+  
+  // Local actions (notes only)
   saveNote: (topicId: string, content: string) => void;
-  incrementSubmissionStat: (type: 'total' | 'accepted' | 'rejected') => void;
   
-  // Quiz related actions
-  saveQuizResult: (quizId: string, score: number) => void;
-  
-  // User session actions
-  login: (userId: string, username: string) => void;
-  logout: () => void;
-  
-  // Streak management
-  updateStreak: () => void;
+  // Clear on logout
+  clearProgress: () => void;
 }
 
-const initialProgress: UserProgress = {
-  completedProblems: [],
-  solvedQuizzes: {},
+const initialState = {
+  progress: null,
+  stats: null,
   notes: {},
-  submissionStats: {
-    total: 0,
-    accepted: 0,
-    rejected: 0,
-  },
-  streakData: {
-    currentStreak: 0,
-    lastActiveDate: '',
-    maxStreak: 0,
-  },
+  isLoadingProgress: false,
+  isLoadingStats: false,
+  error: null,
 };
 
 export const useUserStore = create<UserState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // State
-      ...initialProgress,
-      isAuthenticated: false,
-      userId: null,
-      username: null,
+      ...initialState,
       
-      // Problem related actions
-      addCompletedProblem: (problemId) => 
-        set((state) => ({
-          completedProblems: [...state.completedProblems, problemId]
-        })),
+      // Fetch user progress from backend
+      fetchProgress: async () => {
+        set({ isLoadingProgress: true, error: null });
+        try {
+          const progress = await progressService.getProgress();
+          set({ progress, isLoadingProgress: false });
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to fetch progress',
+            isLoadingProgress: false 
+          });
+        }
+      },
       
+      // Fetch user statistics from backend
+      fetchStats: async () => {
+        set({ isLoadingStats: true, error: null });
+        try {
+          const stats = await progressService.getStats();
+          set({ stats, isLoadingStats: false });
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to fetch stats',
+            isLoadingStats: false 
+          });
+        }
+      },
+      
+      // Update progress on backend
+      updateProgress: async (action: 'solved' | 'attempted' | 'streak', problemId?: string) => {
+        set({ error: null });
+        try {
+          const progress = await progressService.updateProgress({
+            action,
+            problemId,
+          });
+          set({ progress });
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to update progress'
+          });
+        }
+      },
+      
+      // Save note locally (notes are not synced with backend)
       saveNote: (topicId, content) =>
         set((state) => ({
           notes: { ...state.notes, [topicId]: content }
         })),
       
-      incrementSubmissionStat: (type) =>
-        set((state) => ({
-          submissionStats: {
-            ...state.submissionStats,
-            [type]: state.submissionStats[type] + 1
-          }
-        })),
-      
-      // Quiz related actions
-      saveQuizResult: (quizId, score) =>
-        set((state) => ({
-          solvedQuizzes: {
-            ...state.solvedQuizzes,
-            [quizId]: {
-              score,
-              completedAt: new Date().toISOString()
-            }
-          }
-        })),
-      
-      // User session actions
-      login: (userId, username) =>
-        set(() => ({
-          isAuthenticated: true,
-          userId,
-          username
-        })),
-        
-      logout: () =>
-        set(() => ({
-          isAuthenticated: false,
-          userId: null,
-          username: null
-        })),
-      
-      // Streak management
-      updateStreak: () => {
-        set((state) => {
-          const today = new Date().toISOString().split('T')[0];
-          const lastActive = state.streakData.lastActiveDate;
-          
-          // If first time or same day, no change to streak
-          if (!lastActive || lastActive === today) {
-            return {
-              streakData: {
-                ...state.streakData,
-                lastActiveDate: today
-              }
-            };
-          }
-          
-          // Calculate days between last active and today
-          const lastActiveDate = new Date(lastActive);
-          const todayDate = new Date(today);
-          const diffTime = Math.abs(todayDate.getTime() - lastActiveDate.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
-          // If consecutive day, increment streak
-          if (diffDays === 1) {
-            const newStreak = state.streakData.currentStreak + 1;
-            return {
-              streakData: {
-                currentStreak: newStreak,
-                lastActiveDate: today,
-                maxStreak: Math.max(newStreak, state.streakData.maxStreak)
-              }
-            };
-          }
-          
-          // If missed a day, reset streak
-          return {
-            streakData: {
-              currentStreak: 1,
-              lastActiveDate: today,
-              maxStreak: state.streakData.maxStreak
-            }
-          };
-        });
-      }
+      // Clear all progress data (on logout)
+      clearProgress: () => set({
+        progress: null,
+        stats: null,
+        error: null,
+      }),
     }),
     {
       name: 'studyio-user-storage',
-      // Only persist certain parts of the state
+      // Only persist local notes, not API data
       partialize: (state) => ({
-        completedProblems: state.completedProblems,
-        solvedQuizzes: state.solvedQuizzes,
         notes: state.notes,
-        submissionStats: state.submissionStats,
-        streakData: state.streakData,
-        isAuthenticated: state.isAuthenticated,
-        userId: state.userId,
-        username: state.username,
       })
     }
   )
