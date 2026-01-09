@@ -148,7 +148,7 @@ const UserDropdown = ({
         >
           <div className={`relative ${avatarSizeClasses[avatarSize]} bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center overflow-hidden`}>
             {userAvatar ? (
-              <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
+              <img src={userAvatar} alt={userName} className="object-cover w-full h-full" />
             ) : (
               <User className="w-5 h-5 text-white" />
             )}
@@ -164,9 +164,9 @@ const UserDropdown = ({
         <div className={`absolute ${positionClasses[position]} w-72 backdrop-blur-md bg-zinc-900/95 border border-white/10 shadow-xl ring-1 ring-white/10 rounded-xl overflow-visible z-50 animate-in fade-in zoom-in-95`}>
           {/* User Info Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 overflow-hidden rounded-full bg-gradient-to-br from-orange-500 to-red-500">
               {userAvatar ? (
-                <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
+                <img src={userAvatar} alt={userName} className="object-cover w-full h-full" />
               ) : (
                 <User className="w-5 h-5 text-white" />
               )}
@@ -188,7 +188,7 @@ const UserDropdown = ({
             )}
             <MenuItem icon={Settings} label="Account" to="/account" onClick={handleClose} />
             <MenuItem icon={Bug} label="Buganizer" to="/buganizer" onClick={handleClose} />
-            <MenuItem icon={ListChecks} label="Sessions" to="/plus/sessions" onClick={handleClose} />
+            <MenuItem icon={ListChecks} label="Sessions" to="/sessions" onClick={handleClose} />
 
             {/* Notification Item with Sub-dropdown */}
             <div className="relative" ref={notificationRef}>
