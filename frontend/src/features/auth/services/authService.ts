@@ -1,11 +1,46 @@
 import api from '@/services/api/axiosClient';
 
 // Types for authentication
+export interface SocialLinks {
+  linkedin?: string;
+  github?: string;
+  twitter?: string;
+  website?: string;
+  resume?: string;
+}
+
+export interface Project {
+  name: string;
+  description?: string;
+  url?: string;
+  credentials?: {
+    username: string;
+    password: string;
+  };
+}
+
 export interface User {
+  _id: string;
   id: string;
   name: string;
   email: string;
   role: 'student' | 'instructor' | 'admin';
+  avatar?: string;
+  bio?: string;
+  mobile?: string;
+  countryCode?: string;
+  location?: string;
+  university?: string;
+  educationYear?: string;
+  skills?: string[];
+  socialLinks?: SocialLinks;
+  projects?: Project[];
+  coins?: number;
+  streakData?: {
+    currentStreak: number;
+    maxStreak: number;
+    lastActiveDate: string | null;
+  };
 }
 
 export interface AuthResponse {
@@ -73,8 +108,11 @@ export const authApi = {
     try {
       const response = await api.get<AuthResponse>('/auth/me');
       return response.data.data;
-    } catch (error) {
-      console.error('Error getting current user:', error);
+    } catch (error: any) {
+      // Don't log 401 errors as they're expected when not logged in
+      if (error.response?.status !== 401) {
+        console.error('Error getting current user:', error);
+      }
       return null;
     }
   },

@@ -16,7 +16,9 @@ const Editorial: FC<EditorialProps> = ({
   showStudyView: externalShowStudyView,
   onStudyViewChange
 }) => {
-  const [activeLanguage, setActiveLanguage] = useState<string>('cpp');
+  // Get first available language from solutions
+  const firstAvailableLanguage = Object.keys(solutions)[0] || 'cpp';
+  const [activeLanguage, setActiveLanguage] = useState<string>(firstAvailableLanguage);
   const [internalShowStudyView, setInternalShowStudyView] = useState(false);
   const showStudyView = externalShowStudyView ?? internalShowStudyView;
   
@@ -72,34 +74,34 @@ const Editorial: FC<EditorialProps> = ({
         // Normal Editorial View
         <div className="relative flex flex-col w-full h-full">
           <div className="relative flex-1 overflow-hidden">
-            <div className="w-full h-full p-6 overflow-y-auto">
+            <div className="w-full h-full px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6 overflow-y-auto">
               {/* Top Bar with Solution Type Tabs and Study View Toggle */}
-              <div className="sticky top-0 z-10 flex flex-row items-center justify-between mb-3">
+              <div className="flex flex-col items-start justify-between gap-3 mb-4 sm:flex-row sm:items-center sm:mb-3">
                 {/* Solution Type Buttons */}
                 {solutionTypes && solutionTypes.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2 px-2 rounded-lg bg-zinc-800/50 w-fit backdrop-blur-sm">
+                  <div className="flex flex-wrap items-center gap-1 px-2 py-1 rounded-lg sm:gap-2 bg-zinc-800/50 w-fit backdrop-blur-sm">
                     {solutionTypes.map((type, index) => (
                       <div key={type} className="flex items-center">
                         <button
                           type="button"
                           onClick={() => setActiveSolutionType(type)}
-                          className={`text-sm cursor-pointer transition-colors max-w-[140px] truncate text-left py-1.5 px-2 ${
-                            activeSolutionType === type ? 'text-white' : 'text-zinc-400'
+                          className={`text-xs sm:text-sm cursor-pointer transition-colors max-w-[120px] sm:max-w-[140px] truncate text-left py-1.5 px-2 sm:px-3 rounded ${
+                            activeSolutionType === type ? 'text-white bg-zinc-700/50' : 'text-zinc-400'
                           }`}
                         >
                           {solutionLabels[type]}
                         </button>
                         {index < solutionTypes.length - 1 && (
-                          <span className="text-zinc-600">|</span>
+                          <span className="mx-1 text-zinc-600">|</span>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-center gap-2 px-2 rounded-lg bg-zinc-800/50 w-fit backdrop-blur-sm">
+                  <div className="flex flex-wrap items-center gap-2 px-2 py-1 rounded-lg bg-zinc-800/50 w-fit backdrop-blur-sm">
                     <button
                       type="button"
-                      className="text-sm cursor-pointer transition-colors max-w-[140px] truncate text-left py-1.5 px-2 text-zinc-300"
+                      className="text-xs sm:text-sm cursor-pointer transition-colors max-w-[140px] truncate text-left py-1.5 px-2 sm:px-3 text-zinc-300"
                     >
                       Solution
                     </button>
@@ -107,27 +109,24 @@ const Editorial: FC<EditorialProps> = ({
                 )}
 
                 {/* Study View Toggle */}
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={showStudyView}
-                  onClick={() => handleStudyViewToggle(!showStudyView)}
-                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
-                    showStudyView ? 'bg-[#FF6D00] text-white' : 'bg-zinc-700 text-zinc-300'
-                  }`}
-                >
-                  <span
-                    className={`w-4 h-4 rounded-full bg-white transition-transform duration-300 ${
-                      showStudyView ? 'translate-x-0' : '-translate-x-0'
-                    }`}
-                  />
-                  <span>Study view</span>
-                </button>
+                <div className="flex items-center justify-end flex-shrink-0 gap-2 px-4 py-2">
+                  <p className="text-sm text-grayText">Study View</p>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer"
+                      checked={showStudyView}
+                      onChange={(e) => handleStudyViewToggle(e.target.checked)}
+                    />
+                    <div className="w-10 h-6 transition-all bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:bg-primary"></div>
+                    <div className="absolute w-4 h-4 transition-all transform bg-white rounded-full top-1 left-1 peer-checked:translate-x-4"></div>
+                  </label>
+                </div>
               </div>
 
               {/* Video Section */}
-              {videoUrl && (
-                <div className="relative mb-6 overflow-hidden rounded-lg video-container aspect-video bg-zinc-900">
+              <div className="relative mb-4 overflow-hidden rounded-lg sm:mb-6 video-container aspect-video bg-zinc-900">
+                {videoUrl ? (
                   <iframe
                     src={videoUrl}
                     title="Editorial video"
@@ -135,17 +134,21 @@ const Editorial: FC<EditorialProps> = ({
                     allowFullScreen
                     className="absolute top-0 left-0 w-full h-full border-0"
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full">
+                    <p className="text-zinc-500 text-sm">No video available</p>
+                  </div>
+                )}
+              </div>
 
               {/* Editorial Content */}
-              <div className="space-y-6 editorial-content">
+              <div className="space-y-4 sm:space-y-6 editorial-content">
                 {/* Sections (Intuition, Approach, etc.) */}
                 {filteredSections.map((section, index) => (
-                  <div key={index} className="space-y-3">
-                    <h1 className="text-xl font-bold text-white">{section.title}:</h1>
+                  <div key={index} className="space-y-2 sm:space-y-3">
+                    <h1 className="text-lg font-bold text-white sm:text-xl">{section.title}:</h1>
                     {typeof section.content === 'string' ? (
-                      <div className="space-y-2 text-sm leading-relaxed text-zinc-300">
+                      <div className="space-y-2 text-sm leading-relaxed sm:text-base text-zinc-300">
                         {section.content.split('\n').map((line, i) => {
                           const trimmedLine = line.trim();
                           if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-')) {
@@ -166,15 +169,15 @@ const Editorial: FC<EditorialProps> = ({
 
                 {/* Dry Run Section */}
                 {dryRunImages && dryRunImages.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-white">Dry Run</h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    <h3 className="text-lg font-bold text-white sm:text-xl">Dry Run</h3>
                     <ImageCarousel images={dryRunImages} />
                   </div>
                 )}
 
                 {/* Solution Section */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-bold text-white">Solution</h3>
+                <div className="space-y-2 sm:space-y-3">
+                  <h3 className="text-lg font-bold text-white sm:text-xl">Solution</h3>
                   <CodeTabs
                     solutions={solutions}
                     activeLanguage={activeLanguage}
@@ -183,14 +186,14 @@ const Editorial: FC<EditorialProps> = ({
                 </div>
 
                 {/* Complexity Analysis */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-bold text-white">Complexity Analysis</h3>
-                  <div className="space-y-3">
-                    <div>
+                <div className="pb-4 space-y-2 sm:space-y-3">
+                  <h3 className="text-lg font-bold text-white sm:text-xl">Complexity Analysis</h3>
+                  <div className="p-3 space-y-2 rounded-lg sm:space-y-3 bg-zinc-800/30 sm:p-4">
+                    <div className="text-sm sm:text-base">
                       <span className="font-semibold text-white">Time Complexity: </span>
                       <span className="text-zinc-300">{timeComplexity}</span>
                     </div>
-                    <div>
+                    <div className="text-sm sm:text-base">
                       <span className="font-semibold text-white">Space Complexity: </span>
                       <span className="text-zinc-300">{spaceComplexity}</span>
                     </div>
@@ -260,8 +263,8 @@ const Editorial: FC<EditorialProps> = ({
                 </div>
                 
                 <div className="flex-1 p-4 space-y-6 overflow-y-auto">
-                  {videoUrl && (
-                    <div className="w-full aspect-video rounded-lg overflow-hidden bg-[var(--accent)]">
+                  <div className="w-full aspect-video rounded-lg overflow-hidden bg-[var(--accent)]">
+                    {videoUrl ? (
                       <iframe
                         src={videoUrl}
                         title="Editorial video"
@@ -269,8 +272,12 @@ const Editorial: FC<EditorialProps> = ({
                         allowFullScreen
                         className="w-full h-full border-0"
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full">
+                        <p className="text-zinc-500 text-sm">No video available</p>
+                      </div>
+                    )}
+                  </div>
                   
                   {filteredSections.map((section, index) => (
                     <div key={index} className="space-y-3">
@@ -461,7 +468,7 @@ const SplitPane: FC<SplitPaneProps> = ({
                     onChange={() => handleStudyViewToggle(false)}
                   />
                   <div className="w-11 h-6 bg-zinc-300 rounded-full peer dark:bg-zinc-700 peer-checked:bg-[#FF6D00] transition-all duration-300 ease-in-out border border-zinc-400 dark:border-zinc-600"></div>
-                  <div className="absolute w-4 h-4 bg-white rounded-full top-1 left-1 peer-checked:translate-x-5 transition-all duration-300 ease-in-out shadow-lg border border-zinc-200 dark:border-zinc-300"></div>
+                  <div className="absolute w-4 h-4 transition-all duration-300 ease-in-out bg-white border rounded-full shadow-lg top-1 left-1 peer-checked:translate-x-5 border-zinc-200 dark:border-zinc-300"></div>
                 </label>
               </div>
             </div>
@@ -476,37 +483,26 @@ const SplitPane: FC<SplitPaneProps> = ({
             style={{ userSelect: isDragging ? 'none' : 'auto' }}
           >
             <div className="relative flex flex-col items-center justify-center w-full h-full">
-              {/* Draggable Notice */}
-              {showDraggableNotice && (
-                <div className="absolute bottom-[15%] left-0 h-fit w-fit px-3 py-1 border border-[var(--border)] rounded-full bg-[var(--homeplus-bg1)] flex items-center gap-x-2 text-[var(--muted-foreground)] text-[0.75rem] font-normal leading-[16.2px] break-words z-50">
-                  <p>This video section is draggable — study as you like</p>
-                  <X
-                    className="size-[0.75rem] p-[1px] border border-[var(--muted-foreground)] rounded-full hover:text-[var(--brand)] transition-all duration-300 hover:border-[var(--brand)] hover:bg-[var(--brand)]/20 cursor-pointer"
-                    onClick={() => setShowDraggableNotice(false)}
-                  />
-                </div>
-              )}
-
               {/* Video Player */}
-              {videoUrl && (
+              <div 
+                className={`w-full max-w-4xl px-2 py-1 absolute rounded-lg bg-[var(--accent)] gap-y-1 flex flex-col ${isDragging ? '' : 'transition-all duration-300 ease-out'} will-change-auto`}
+                style={{ top: `${videoPosition.top}px`, left: '50%', transform: 'translateX(-50%)' }}
+              >
                 <div 
-                  className={`w-full max-w-4xl px-2 py-1 absolute rounded-lg bg-[var(--accent)] gap-y-1 flex flex-col ${isDragging ? '' : 'transition-all duration-300 ease-out'} will-change-auto`}
-                  style={{ top: `${videoPosition.top}px`, left: '50%', transform: 'translateX(-50%)' }}
+                  className="drag-handle rounded-full flex flex-row justify-center items-center h-[8px] transition duration-200 cursor-ns-resize"
+                  onMouseDown={handleDragStart}
                 >
+                  <div className="rounded-full mx-auto w-8 h-[4px] bg-[var(--background)]"></div>
+                </div>
+                <div className="relative w-full overflow-hidden rounded-lg aspect-video">
                   <div 
-                    className="drag-handle rounded-full flex flex-row justify-center items-center h-[8px] transition duration-200 cursor-ns-resize"
-                    onMouseDown={handleDragStart}
-                  >
-                    <div className="rounded-full mx-auto w-8 h-[4px] bg-[var(--background)]"></div>
-                  </div>
-                  <div className="relative w-full overflow-hidden rounded-lg aspect-video">
-                    <div 
-                      className="absolute inset-0 z-20 pointer-events-auto" 
-                      style={{ pointerEvents: 'auto', boxShadow: 'rgba(0, 0, 0, 0.35) 0px -50px 36px -28px inset' }}
-                    ></div>
-                    <div className="w-full h-full">
-                      <div className="video-tab-content bg-[var(--background)]">
-                        <div className="relative w-full h-full video-container aspect-video">
+                    className="absolute inset-0 z-20 pointer-events-auto" 
+                    style={{ pointerEvents: 'auto', boxShadow: 'rgba(0, 0, 0, 0.35) 0px -50px 36px -28px inset' }}
+                  ></div>
+                  <div className="w-full h-full">
+                    <div className="video-tab-content bg-[var(--background)]">
+                      <div className="relative w-full h-full video-container aspect-video">
+                        {videoUrl ? (
                           <iframe
                             src={videoUrl}
                             title="Editorial video"
@@ -514,17 +510,21 @@ const SplitPane: FC<SplitPaneProps> = ({
                             allowFullScreen
                             style={{ border: '0px', maxWidth: '100%', position: 'absolute', top: '0px', left: '0px', height: '100%', width: '100%' }}
                           />
-                        </div>
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full">
+                            <p className="text-zinc-500 text-sm">No video available</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
           {/* Footer Bar */}
-          <div className="sticky mt-auto bottom-0 left-0 right-0 z-10 bg-[var(--tab-content-bg)] border-t border-[var(--border)]">
+          <div className="mt-auto bg-[var(--tab-content-bg)] border-t border-[var(--border)]">
             <div className="flex flex-row items-center justify-between px-4 py-1">
               <div className="flex items-center gap-x-3">
                 <button

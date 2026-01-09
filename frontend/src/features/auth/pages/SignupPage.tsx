@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from "@/shared/hooks/useAuth";
+import { useToast } from '@/shared/hooks/ToastContext';
 import { Eye, EyeOff, User, Mail, Lock, Loader2 } from 'lucide-react';
 import '@/styles/Auth.css';
 
@@ -17,6 +18,7 @@ const SignupPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { register } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
   const navigate = useNavigate();
 
   const validateForm = () => {
@@ -63,12 +65,13 @@ const SignupPage = () => {
     try {
       const result = await register(formData.username, formData.email, formData.password);
       if (result.success) {
+        toastSuccess('Signup successful! Please log in.');
         navigate('/login');
       } else {
-        console.log('Signup failed:', result.error);
+        toastError('Signup failed: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      toastError('Signup error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }

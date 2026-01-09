@@ -7,6 +7,9 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      screens: {
+        'xs': '475px', // Extra small devices
+      },
       colors: {
         // Original colors
         background: "#0f0f0f",
@@ -43,5 +46,32 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.scrollbar-thin': {
+          'scrollbar-width': 'thin',
+        },
+        '.scrollbar-thin::-webkit-scrollbar': {
+          width: '8px',
+          height: '8px',
+        },
+        '.scrollbar-thumb-gray-600::-webkit-scrollbar-thumb': {
+          'background-color': '#4b5563',
+          'border-radius': '4px',
+        },
+        '.scrollbar-thumb-gray-600::-webkit-scrollbar-thumb:hover': {
+          'background-color': '#6b7280',
+        },
+        '.scrollbar-track-gray-800::-webkit-scrollbar-track': {
+          'background-color': '#1f2937',
+          'border-radius': '4px',
+        },
+        '.scrollbar-thumb-gray-500:hover::-webkit-scrollbar-thumb:hover': {
+          'background-color': '#6b7280',
+        },
+      }
+      addUtilities(newUtilities, ['responsive', 'hover'])
+    },
+  ],
 }

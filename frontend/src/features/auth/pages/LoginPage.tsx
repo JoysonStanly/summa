@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from "@/shared/hooks/useAuth";
+import { useToast } from '@/shared/hooks/ToastContext';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import '@/styles/Auth.css';
 
@@ -14,10 +15,11 @@ const LoginPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { login } = useAuth();
+  const { success: toastSuccess, error: toastError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/home';
+  const from = location.state?.from?.pathname || '/';
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -45,12 +47,13 @@ const LoginPage = () => {
     try {
       const result = await login(formData.email, formData.password);
       if (result.success) {
+        toastSuccess('Login successful!');
         navigate(from, { replace: true });
       } else {
-        console.log('Login failed:', result.error);
+        toastError('Login failed: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Login error:', error);
+      toastError('Login error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }

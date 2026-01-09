@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { authApi, type User } from '../services/authService';
+import { useUserStore } from '@/store/userStore';
 
 interface AuthContextType {
   user: User | null;
@@ -89,10 +90,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       setError(null);
       await authApi.logout();
-      setUser(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Logout failed');
+      // Even if API fails (e.g. 401), we should still clear local state
+      console.error('Logout API error:', err);
     } finally {
+      setUser(null);
+      useUserStore.getState().clearProgress();
       setLoading(false);
     }
   };

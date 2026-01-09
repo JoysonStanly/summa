@@ -16,9 +16,15 @@ import {
   ChevronRight
 } from "lucide-react";
 import UnifiedSidebar from "@/shared/components/layout/UnifiedSidebar";
-import { findTopicByPath, findModuleByPath, getSubjectData, getDefaultRoute } from "../data/subjects";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { findTopicByPath, findModuleByPath, findProblemByPath, getSubjectData, getDefaultRoute } from "../data/subjects";
 import type { Topic, Module, Subject } from "../data/subjects";
 import { subjectService } from '../services/subjectService';
+import { operatingSystemIntroductionContent } from '../data/operatingSystem/Basics of Operating Systems/operatingSystemIntroduction';
+import { whatIsDbmsContent } from '../data/dbms/Introduction to DBMS/whatIsDbms';
+import { whatIsLldContent } from '../data/lowLevelDesign/Introduction to LLD/whatIsLld';
+import { whatIsComputerNetworkContent } from '../data/computerNetworks/Introduction to Networks/whatIsComputerNetwork';
+import { introductionToOopsContent } from '../data/oops/Fundamentals of OOPs/introductionToOops';
 
 const CoreSubjectPage: React.FC = () => {
   const { subjectId, moduleId, topicId } = useParams<{
@@ -29,38 +35,26 @@ const CoreSubjectPage: React.FC = () => {
   
   const navigate = useNavigate();
   const [topic, setTopic] = useState<Topic | null>(null);
+  const [problem, setProblem] = useState<{ id: string; name: string; isCompleted?: boolean } | null>(null);
   const [module, setModule] = useState<Module | null>(null);
   const [subject, setSubject] = useState<Subject | null>(null);
   const [activeTab, setActiveTab] = useState('about');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isStudyView, setIsStudyView] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // Try to fetch subject from API, fallback to static data
-  useEffect(() => {
-    const fetchSubject = async () => {
-      if (!subjectId) return;
-      try {
-        setLoading(true);
-        const apiSubject = await subjectService.getSubjectByCode(subjectId);
-        if (apiSubject) {
-          console.log('Using API subject data:', apiSubject);
-        }
-      } catch (error) {
-        console.log('Using static subject data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSubject();
-  }, [subjectId]);
+  const [loading, setLoading] = useState(true);
+  const [topicContent, setTopicContent] = useState<{
+    carouselImages: string[];
+    htmlContent: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!subjectId) return;
 
+    setLoading(true);
     const subjectData = getSubjectData(subjectId);
     if (!subjectData) {
       navigate('/operating-system/basics-of-operating-systems/operating-system-introduction', { replace: true });
+      setLoading(false);
       return;
     }
 
@@ -72,15 +66,53 @@ const CoreSubjectPage: React.FC = () => {
       if (defaultRoute) {
         navigate(`/${subjectId}/${defaultRoute.moduleId}/${defaultRoute.topicId}`, { replace: true });
       }
+      setLoading(false);
       return;
     }
 
     const foundTopic = findTopicByPath(subjectId, moduleId, topicId);
+    const foundProblem = findProblemByPath(subjectId, moduleId, topicId);
     const foundModule = findModuleByPath(subjectId, moduleId);
     
     if (foundTopic && foundModule) {
       setTopic(foundTopic);
+      setProblem(null);
       setModule(foundModule);
+      
+      // Load dynamic content based on subject and topic
+      if (subjectId === 'operating-system' && topicId === 'operating-system-introduction') {
+        setTopicContent(operatingSystemIntroductionContent);
+      } else if (subjectId === 'dbms' && topicId === 'what-is-dbms') {
+        setTopicContent(whatIsDbmsContent);
+      } else if (subjectId === 'low-level-design' && topicId === 'what-is-lld') {
+        setTopicContent(whatIsLldContent);
+      } else if (subjectId === 'computer-networks' && topicId === 'what-is-computer-network') {
+        setTopicContent(whatIsComputerNetworkContent);
+      } else if (subjectId === 'oops' && topicId === 'introduction-to-oops') {
+        setTopicContent(introductionToOopsContent);
+      } else {
+        setTopicContent(null);
+      }
+    } else if (foundProblem && foundModule) {
+      // Handle module-level problems (like OS Introduction)
+      setProblem(foundProblem);
+      setTopic(null);
+      setModule(foundModule);
+      
+      // Load dynamic content for problems too
+      if (subjectId === 'operating-system' && topicId === 'operating-system-introduction') {
+        setTopicContent(operatingSystemIntroductionContent);
+      } else if (subjectId === 'dbms' && topicId === 'what-is-dbms') {
+        setTopicContent(whatIsDbmsContent);
+      } else if (subjectId === 'computer-networks' && topicId === 'what-is-computer-network') {
+        setTopicContent(whatIsComputerNetworkContent);
+      } else if (subjectId === 'low-level-design' && topicId === 'what-is-lld') {
+        setTopicContent(whatIsLldContent);
+      } else if (subjectId === 'oops' && topicId === 'introduction-to-oops') {
+        setTopicContent(introductionToOopsContent);
+      } else {
+        setTopicContent(null);
+      }
     } else {
       // Redirect to default route for this subject
       const defaultRoute = getDefaultRoute(subjectId);
@@ -88,9 +120,18 @@ const CoreSubjectPage: React.FC = () => {
         navigate(`/${subjectId}/${defaultRoute.moduleId}/${defaultRoute.topicId}`, { replace: true });
       }
     }
+    setLoading(false);
   }, [subjectId, moduleId, topicId, navigate]);
 
-  if (!topic || !module) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if ((!topic && !problem) || !module) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
         <div className="text-center">
@@ -107,16 +148,8 @@ const CoreSubjectPage: React.FC = () => {
     );
   }
 
-  const carouselImages = [
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_2.jpg-DFnp6oj3',
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_3.jpg-jJiazdQl',
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_4.jpg-_rwblDCr',
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_5.jpg-gK3zf7d1',
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_6.jpg-ytYzht0m',
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_7.jpg-k022fLsK',
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_8.jpg-lQzQ0k9g',
-    'https://static.takeuforward.org/premium///OS_P1_OperatingSystem_and_MainFunctions_9.jpg-aZ545Z0e'
-  ];
+  // Get carousel images from topic content or use empty array
+  const carouselImages = topicContent?.carouselImages || [];
 
   const handleMarkComplete = (completed: boolean) => {
     console.log(`Marking topic ${topicId} as ${completed ? 'completed' : 'incomplete'}`);
@@ -329,10 +362,12 @@ const CoreSubjectPage: React.FC = () => {
               categories={subject.modules.map(module => ({
                 id: module.id,
                 name: module.title,
+                problems: module.problems,
                 topics: module.topics.map(t => ({
                   id: t.id,
                   name: t.title,
-                  isCompleted: t.status === 'completed'
+                  isCompleted: t.status === 'completed',
+                  problems: t.problems
                 }))
               }))}
               searchPlaceholder={`Search ${subject.title} Topics...`}
@@ -364,7 +399,7 @@ const CoreSubjectPage: React.FC = () => {
               {/* Title Section */}
               <div className="flex items-center justify-between w-full gap-3 px-6 py-4 bg-gradient-to-b from-sidebar/50 to-transparent border-b border-borders/50">
                 <h1 className="relative max-w-lg text-2xl font-bold tracking-tight text-white truncate">
-                  {topic.title}
+                  {topic ? topic.title : problem?.name}
                 </h1>
               </div>
 
@@ -439,7 +474,7 @@ const CoreSubjectPage: React.FC = () => {
                     id="markComplete"
                     name="complete"
                     type="checkbox"
-                    checked={topic.status === 'completed'}
+                    checked={topic ? topic.status === 'completed' : problem?.isCompleted}
                     onChange={(e) => handleMarkComplete(e.target.checked)}
                     className="w-5 h-5 rounded cursor-pointer text-primary ring-0 focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all"
                   />
@@ -511,76 +546,7 @@ const CoreSubjectPage: React.FC = () => {
 
                       {/* Comments List */}
                       <div className="px-6 mt-4 border-borders">
-                        {/* Sample Comments */}
-                        <div className="py-4">
-                          <div className="flex flex-col">
-                            <div className="flex items-center justify-between">
-                              <div className="relative flex items-center justify-center gap-2">
-                                <div className="relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-pink-200 rounded-full">
-                                  <span className="font-medium text-gray-600">MV</span>
-                                </div>
-                                <a className="font-medium text-white" href="#">Munagala Vamsi</a>
-                                <span className="text-xs text-grayText">6 months ago</span>
-                              </div>
-                              <div className="relative cursor-pointer">
-                                <button aria-label="Menu options">
-                                  <MoreVertical className="w-6 h-6 fill-grayText" />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="flex-grow ml-12">
-                              <div className="text-white">
-                                <p>i don't know why but these core subjects are not good</p>
-                                <p><br /></p>
-                                <p>except oops module where striver is explaining the concepts but remaining one's are reading the content</p>
-                              </div>
-                              <div className="flex items-center mt-2 space-x-4 text-white">
-                                <button className="flex items-center space-x-1">
-                                  <ThumbsUp className="w-6 h-6 stroke-grayText" />
-                                  <span>52</span>
-                                </button>
-                                <button className="flex items-center space-x-1">
-                                  <MessageSquare className="w-6 h-6 fill-none stroke-grayText" />
-                                  <span>1 replies</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="py-4">
-                          <div className="flex flex-col">
-                            <div className="flex items-center justify-between">
-                              <div className="relative flex items-center justify-center gap-2">
-                                <div className="relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-green-200 rounded-full">
-                                  <span className="font-medium text-gray-600">PS</span>
-                                </div>
-                                <a className="font-medium text-white" href="#">Pulkit Sinha</a>
-                                <span className="text-xs text-grayText">3 months ago</span>
-                              </div>
-                              <div className="relative cursor-pointer">
-                                <button aria-label="Menu options">
-                                  <MoreVertical className="w-6 h-6 fill-grayText" />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="flex-grow ml-12">
-                              <div className="text-white">
-                                <p>Hi Striver. It's a humble request to record and upload videos of OS in which you teach us this subject!</p>
-                              </div>
-                              <div className="flex items-center mt-2 space-x-4 text-white">
-                                <button className="flex items-center space-x-1">
-                                  <ThumbsUp className="w-6 h-6 stroke-grayText" />
-                                  <span>26</span>
-                                </button>
-                                <button className="flex items-center space-x-1">
-                                  <MessageSquare className="w-6 h-6 fill-none stroke-grayText" />
-                                  <span>0 replies</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        {/* No comments yet */}
                       </div>
                     </div>
                   </div>
@@ -657,84 +623,66 @@ const CoreSubjectPage: React.FC = () => {
                         }`}>
                           <div className="coreSubject dark:text-zinc-300">
                             
-                            {/* Image Carousel */}
-                            <div className="mb-6 image-carousel-container">
-                              <div className="border carousel-container border-borders">
-                                <div className="carousel" style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}>
-                                  {carouselImages.map((imageSrc, index) => (
-                                    <div key={index} className="carousel-image">
-                                      <img src={imageSrc} alt={`Image ${index + 1}`} />
+                            {/* Image Carousel - Only show if images exist */}
+                            {carouselImages.length > 0 && (
+                              <div className="mb-6 image-carousel-container">
+                                <div className="border carousel-container border-borders">
+                                  <div className="carousel" style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}>
+                                    {carouselImages.map((imageSrc, index) => (
+                                      <div key={index} className="carousel-image">
+                                        <img src={imageSrc} alt={`Image ${index + 1}`} />
+                                      </div>
+                                    ))}
+                                  </div>
+                                  
+                                  <div className="control-container">
+                                    <div className="control-container-2">
+                                      <button 
+                                        className="image-carousel-arrow image-carousel-left-arrow group"
+                                        onClick={handlePreviousImage}
+                                      >
+                                        <ChevronLeft className="w-5 h-5" />
+                                      </button>
+                                      <span className="img-number">{currentImageIndex + 1}/{carouselImages.length}</span>
+                                      <button 
+                                        className="image-carousel-arrow image-carousel-right-arrow group"
+                                        onClick={handleNextImage}
+                                      >
+                                        <ChevronRight className="w-5 h-5" />
+                                      </button>
                                     </div>
-                                  ))}
-                                </div>
-                                
-                                <div className="control-container">
-                                  <div className="control-container-2">
-                                    <button 
-                                      className="image-carousel-arrow image-carousel-left-arrow group"
-                                      onClick={handlePreviousImage}
-                                    >
-                                      <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <span className="img-number">{currentImageIndex + 1}/{carouselImages.length}</span>
-                                    <button 
-                                      className="image-carousel-arrow image-carousel-right-arrow group"
-                                      onClick={handleNextImage}
-                                    >
-                                      <ChevronRight className="w-5 h-5" />
+                                    <div className="control-buttons">
+                                      <button className="image-carousel-control-button image-carousel-play-button group">
+                                        <Play className="w-5 h-5" />
+                                      </button>
+                                      <button className="image-carousel-control-button image-carousel-pause-button group">
+                                        <Pause className="w-5 h-5" />
+                                      </button>
+                                    </div>
+                                    <button className="image-carousel-control-button image-carousel-down-button group">
+                                      <ExternalLink className="w-5 h-5" />
                                     </button>
                                   </div>
-                                  <div className="control-buttons">
-                                    <button className="image-carousel-control-button image-carousel-play-button group">
-                                      <Play className="w-5 h-5" />
-                                    </button>
-                                    <button className="image-carousel-control-button image-carousel-pause-button group">
-                                      <Pause className="w-5 h-5" />
-                                    </button>
+                                  
+                                  {/* Vertical View for Study Mode */}
+                                  <div className="vertical-view">
+                                    {carouselImages.map((imageSrc, index) => (
+                                      <img key={index} src={imageSrc} alt={`Image ${index + 1}`} />
+                                    ))}
                                   </div>
-                                  <button className="image-carousel-control-button image-carousel-down-button group">
-                                    <ExternalLink className="w-5 h-5" />
-                                  </button>
-                                </div>
-                                
-                                {/* Vertical View for Study Mode */}
-                                <div className="vertical-view">
-                                  {carouselImages.map((imageSrc, index) => (
-                                    <img key={index} src={imageSrc} alt={`Image ${index + 1}`} />
-                                  ))}
                                 </div>
                               </div>
-                            </div>
+                            )}
 
-                            {/* Content */}
-                            <h1 className="mb-4 text-2xl font-bold text-white">Operating System Introduction</h1>
-                            <p className="mb-4 leading-relaxed text-gray-300">
-                              An <b>Operating System (OS)</b> is the <u>core software</u> that manages all the hardware and software resources in a computer system. It acts as an intermediary between the user and the computer hardware, enabling you to run applications, manage files, and perform other computing tasks seamlessly. Without an OS, you'd have to directly handle each hardware component yourself, which would be extremely tedious and prone to errors.
-                            </p>
-                            <p className="mb-4 text-gray-300">
-
-                              <strong className="text-white">Real-Life Analogy:</strong>
-                              Think of an OS like the event coordinator at a big concert:
-                            </p>
-                            <ol className="pl-6 mb-6 space-y-2 text-gray-300">
-                              <li>The coordinator (OS) ensures that each performer (application) has the required resources (stage, microphones, instruments).</li>
-                              <li>They also manage the crowd flow (CPU and memory) to prevent chaos.</li>
-                              <li>They handle behind-the-scenes logistics like security and scheduling (system security and process management).</li>
-                            </ol>
-                            
-                            <div className="flex justify-center my-6">
-                              <img src="https://static.takeuforward.org/premium/Basics of Operating Systems/Operating System Introduction/Image_1-BI_GUi80" alt="Operating System Diagram" className="h-auto max-w-full rounded-lg" />
-                            </div>
-
-                            <h2 className="mb-4 text-xl font-semibold text-white">Core Components of an Operating System</h2>
-                            <p className="mb-4 text-gray-300">When the OS loads into memory, it provides several core features that make computing convenient and efficient:</p>
-                            <ol className="pl-6 space-y-3 text-gray-300">
-                              <li><strong className="text-white">Process Management:</strong> Creates, schedules, and terminates processes (running programs).</li>
-                              <li><strong className="text-white">Memory Management:</strong> Allocates and deallocates memory space, ensuring each program gets what it needs without interfering with others.</li>
-                              <li><strong className="text-white">File System Management:</strong> Organizes data in files and folders on storage devices for easy access and management.</li>
-                              <li><strong className="text-white">Device Management:</strong> Coordinates hardware components (like printers, disks, USB devices) so multiple applications can share them.</li>
-                              <li><strong className="text-white">Security & Access Control:</strong> Protects against unauthorized access and ensures user data privacy.</li>
-                            </ol>
+                            {/* Dynamic Content */}
+                            {topicContent ? (
+                              <div dangerouslySetInnerHTML={{ __html: topicContent.htmlContent }} />
+                            ) : (
+                              <div>
+                                <h1 className="mb-4 text-2xl font-bold text-white">{topic?.title || problem?.name}</h1>
+                                <p className="text-gray-400">Content coming soon...</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -785,7 +733,7 @@ const CoreSubjectPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-          </div>
+            </div>
             </Split>
           )}
 
@@ -901,35 +849,15 @@ const CoreSubjectPage: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Content */}
-                            <h1 className="mb-4 text-2xl font-bold text-white">Operating System Introduction</h1>
-                            <p className="mb-4 leading-relaxed text-gray-300">
-                              An <b>Operating System (OS)</b> is the <u>core software</u> that manages all the hardware and software resources in a computer system. It acts as an intermediary between the user and the computer hardware, enabling you to run applications, manage files, and perform other computing tasks seamlessly. Without an OS, you'd have to directly handle each hardware component yourself, which would be extremely tedious and prone to errors.
-                            </p>
-                            <p className="mb-4 text-gray-300">
-
-                              <strong className="text-white">Real-Life Analogy:</strong>
-                              Think of an OS like the event coordinator at a big concert:
-                            </p>
-                            <ol className="pl-6 mb-6 space-y-2 text-gray-300">
-                              <li>The coordinator (OS) ensures that each performer (application) has the required resources (stage, microphones, instruments).</li>
-                              <li>They also manage the crowd flow (CPU and memory) to prevent chaos.</li>
-                              <li>They handle behind-the-scenes logistics like security and scheduling (system security and process management).</li>
-                            </ol>
-                            
-                            <div className="flex justify-center my-6">
-                              <img src="https://static.takeuforward.org/premium/Basics of Operating Systems/Operating System Introduction/Image_1-BI_GUi80" alt="Operating System Diagram" className="h-auto max-w-full rounded-lg" />
-                            </div>
-
-                            <h2 className="mb-4 text-xl font-semibold text-white">Core Components of an Operating System</h2>
-                            <p className="mb-4 text-gray-300">When the OS loads into memory, it provides several core features that make computing convenient and efficient:</p>
-                            <ol className="pl-6 space-y-3 text-gray-300">
-                              <li><strong className="text-white">Process Management:</strong> Creates, schedules, and terminates processes (running programs).</li>
-                              <li><strong className="text-white">Memory Management:</strong> Allocates and deallocates memory space, ensuring each program gets what it needs without interfering with others.</li>
-                              <li><strong className="text-white">File System Management:</strong> Organizes data in files and folders on storage devices for easy access and management.</li>
-                              <li><strong className="text-white">Device Management:</strong> Coordinates hardware components (like printers, disks, USB devices) so multiple applications can share them.</li>
-                              <li><strong className="text-white">Security & Access Control:</strong> Protects against unauthorized access and ensures user data privacy.</li>
-                            </ol>
+                            {/* Dynamic Content */}
+                            {topicContent ? (
+                              <div dangerouslySetInnerHTML={{ __html: topicContent.htmlContent }} />
+                            ) : (
+                              <div>
+                                <h1 className="mb-4 text-2xl font-bold text-white">{topic?.title || problem?.name}</h1>
+                                <p className="text-gray-400">Content coming soon...</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

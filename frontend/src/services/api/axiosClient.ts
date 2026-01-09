@@ -38,12 +38,20 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    const { response } = error;
+    const { response, config } = error;
     
     if (response?.status === 401) {
-      // Unauthorized - redirect to login
-      console.error('[API] Unauthorized - redirecting to login');
-      window.location.href = '/login';
+      // Don't redirect if we're already on login/signup page or checking auth status
+      const isAuthPage = window.location.pathname === '/login' || 
+                         window.location.pathname === '/signup' ||
+                         window.location.pathname === '/';
+      const isAuthCheck = config?.url?.includes('/auth/me');
+      
+      if (!isAuthPage && !isAuthCheck) {
+        // Unauthorized - redirect to login only if not on auth pages
+        console.error('[API] Unauthorized - redirecting to login');
+        window.location.href = '/login';
+      }
     } else if (response?.status === 403) {
       console.error('[API] Forbidden - insufficient permissions');
     } else if (response?.status === 404) {

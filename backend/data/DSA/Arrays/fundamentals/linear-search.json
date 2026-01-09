@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "version": "1.0",
+    "lastModified": "2026-01-02",
+    "author": "StudyIO"
+  },
+  "problem": {
+    "statement": "Given an array of integers nums and an integer target, return the index of target if it exists in the array. If the target is not found, return -1.\n\nSolve using linear search (check each element from left to right).",
+    "examples": [
+      {
+        "input": "nums = [4, 2, 7, 1, 9, 3], target = 7",
+        "output": "2",
+        "explanation": "7 is found at index 2."
+      },
+      {
+        "input": "nums = [1, 2, 3, 4, 5], target = 6",
+        "output": "-1",
+        "explanation": "6 does not exist in the array."
+      }
+    ],
+    "constraints": [
+      "1 <= nums.length <= 10^4",
+      "-10^4 <= nums[i] <= 10^4",
+      "-10^4 <= target <= 10^4"
+    ],
+    "hints": [
+      "Loop from i = 0 to n-1.",
+      "If nums[i] == target, return i.",
+      "If you finish the loop, return -1."
+    ]
+  },
+  "editorial": {
+    "sections": [
+      {
+        "title": "Intuition",
+        "content": "The naive way is to think of checking each element one by one from left to right.\nKeep comparing each element with the target until we find a match or reach the end of the array."
+      },
+      {
+        "title": "Approach",
+        "content": "• Traverse through the array, similar to the idea of scanning each element serially.\n• Check if the current element of array is equal to the target element.\n• If so, return the index and stop scanning further.\n• In case the target value is not found, return -1 marking that the target element is missing."
+      }
+    ],
+    "solutions": {
+      "java": "import java.util.*;\n\nclass Solution {\n  // Linear Search Function\n  public int linearSearch(int[] nums, int target) {\n    // Traverse the entire array\n    for (int i = 0; i < nums.length; i++) {\n      // Check if current element is target\n      if (nums[i] == target) {\n        // Return if target found\n        return i;\n      }\n    }\n    // If target not found\n    return -1;\n  }\n\n  public static void main(String[] args) {\n    Solution sol = new Solution();\n    int[] arr = {1, 2, 3, 4, 5};\n    System.out.println(sol.linearSearch(arr, 3));\n  }\n}",
+      "python": "def linear_search(nums, target):\n    # Traverse the array\n    for i in range(len(nums)):\n        # Check if current element is target\n        if nums[i] == target:\n            return i\n    # If target not found\n    return -1\n\n# Example usage\narr = [1, 2, 3, 4, 5]\nprint(linear_search(arr, 3))",
+      "javascript": "function linearSearch(nums, target) {\n  // Traverse the array\n  for (let i = 0; i < nums.length; i++) {\n    // Check if current element is target\n    if (nums[i] === target) {\n      return i;\n    }\n  }\n  // If target not found\n  return -1;\n}\n\n// Example usage\nconst arr = [1, 2, 3, 4, 5];\nconsole.log(linearSearch(arr, 3));",
+      "cpp": "#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    // Linear Search Function\n    int linearSearch(vector<int>& nums, int target) {\n        // Traverse the entire array\n        for (int i = 0; i < nums.size(); i++) {\n            // Check if current element is target\n            if (nums[i] == target) {\n                // Return if target found\n                return i;\n            }\n        }\n        // If target not found\n        return -1;\n    }\n};\n\nint main() {\n    Solution sol;\n    vector<int> arr = {1, 2, 3, 4, 5};\n    cout << sol.linearSearch(arr, 3) << endl;\n    return 0;\n}"
+    },
+    "timeComplexity": "O(N), in worst case the entire array will be traversed, taking time N where N is the size of the array.",
+    "spaceComplexity": "O(1), no extra space is used apart from the input array.",
+    "videoUrl": "",
+    "videoDuration": 0,
+    "dryRunImages": [
+      {
+        "id": "1",
+        "src": "/images/session-dp.jpg",
+        "alt": "Dry run step 1"
+      },
+      {
+        "id": "2",
+        "src": "/images/session-graph.jpg",
+        "alt": "Dry run step 2"
+      }
+    ]
+  },
+  "starterCode": {
+    "javascript": "var linearSearch = function(nums, target) {\n  // Write your code here\n};",
+    "python": "class Solution:\n    def linearSearch(self, nums, target):\n        # Write your code here\n        pass",
+    "cpp": "class Solution {\npublic:\n    int linearSearch(vector<int>& nums, int target) {\n        // Write your code here\n    }\n};",
+    "java": "class Solution {\n    public int linearSearch(int[] nums, int target) {\n        // Write your code here\n    }\n}"
+  },
+  "testCases": [
+    {
+      "testCaseNumber": 1,
+      "input": ["[4,2,7,1,9,3]", "7"],
+      "output": "2",
+      "explanation": "7 is at index 2",
+      "isHidden": false,
+      "weight": 1
+    },
+    {
+      "testCaseNumber": 2,
+      "input": ["[1,2,3,4,5]", "6"],
+      "output": "-1",
+      "explanation": "6 not found",
+      "isHidden": false,
+      "weight": 1
+    },
+    {
+      "testCaseNumber": 3,
+      "input": ["[5]", "5"],
+      "output": "0",
+      "explanation": "Single element matches",
+      "isHidden": true,
+      "weight": 1
+    }
+  ]
+}

@@ -21,11 +21,10 @@ const AdminDashboardPage = () => {
   ];
 
   const quickActions = [
-    { title: 'Add Problem', icon: Code, link: '/admin/problems/new', color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30 hover:border-blue-500/50' },
+    { title: 'Add Problem', icon: Code, link: '/admin/problems', color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30 hover:border-blue-500/50' },
     { title: 'Send Notification', icon: Bell, link: '/admin/notifications', color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30 hover:border-orange-500/50' },
     { title: 'Review Bugs', icon: Bug, link: '/admin/buganizer', color: 'from-red-500/20 to-red-600/10 border-red-500/30 hover:border-red-500/50' },
-    { title: 'Schedule Session', icon: Calendar, link: '/admin/sessions/new', color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30 hover:border-purple-500/50' },
-    { title: 'View Questions', icon: FileText, link: '/admin/aptitude', color: 'from-green-500/20 to-green-600/10 border-green-500/30 hover:border-green-500/50' },
+    { title: 'Schedule Session', icon: Calendar, link: '/admin/sessions', color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30 hover:border-purple-500/50' },
     { title: 'Manage Users', icon: Users, link: '/admin/users', color: 'from-teal-500/20 to-teal-600/10 border-teal-500/30 hover:border-teal-500/50' },
   ];
 
@@ -40,7 +39,7 @@ const AdminDashboardPage = () => {
         <div className="border-b border-[#2a2a2a] bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f]">
           <div className="max-w-[1800px] mx-auto px-8 py-6">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-gradient-to-br from-orange-500/20 to-orange-600/10 rounded-lg border border-orange-500/30">
+              <div className="p-2 border rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-600/10 border-orange-500/30">
                 <LayoutDashboard size={24} className="text-orange-500" />
               </div>
               <h1 className="text-3xl font-bold">Admin Dashboard</h1>
@@ -62,7 +61,7 @@ const AdminDashboardPage = () => {
             <Zap size={24} className="text-orange-500" />
             <h2 className="text-2xl font-bold">Quick Actions</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {quickActions.map((action, index) => (
               <motion.div
                 key={action.title}
@@ -80,7 +79,7 @@ const AdminDashboardPage = () => {
                   <div className="flex-1">
                     <h3 className="font-semibold">{action.title}</h3>
                   </div>
-                  <Plus size={20} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <Plus size={20} className="transition-opacity opacity-50 group-hover:opacity-100" />
                 </Link>
               </motion.div>
             ))}
@@ -116,9 +115,9 @@ const AdminDashboardPage = () => {
                     <span className="text-xs text-gray-500">{activity.time}</span>
                     {activity.live && (
                       <span className="flex items-center gap-1 text-xs text-red-400">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        <span className="relative flex w-2 h-2">
+                          <span className="absolute inline-flex w-full h-full bg-red-400 rounded-full opacity-75 animate-ping"></span>
+                          <span className="relative inline-flex w-2 h-2 bg-red-500 rounded-full"></span>
                         </span>
                         LIVE
                       </span>

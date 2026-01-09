@@ -156,6 +156,47 @@ export const problemsApi = {
   async getSubmissions(problemId: string) {
     return fetchApi(`/submissions?problemId=${problemId}`);
   },
+  
+  // Create a new problem (admin only)
+  async createProblem(problemData: {
+    title: string;
+    slug: string;
+    difficulty: string;
+    category: string;
+    subcategory: string;
+    tags: string[];
+    contentPath: string;
+    likes: number;
+    dislikes: number;
+  }) {
+    return fetchApi('/problems', {
+      method: 'POST',
+      body: JSON.stringify(problemData),
+    });
+  },
+  
+  // Update an existing problem (admin only)
+  async updateProblem(id: string, problemData: Partial<{
+    title: string;
+    slug: string;
+    difficulty: string;
+    category: string;
+    subcategory: string;
+    tags: string[];
+    contentPath: string;
+  }>) {
+    return fetchApi(`/problems/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(problemData),
+    });
+  },
+  
+  // Delete a problem (admin only)
+  async deleteProblem(id: string) {
+    return fetchApi(`/problems/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // Subject-related API calls

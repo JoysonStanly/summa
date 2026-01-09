@@ -1,5 +1,6 @@
 import { type FC, useState } from 'react';
-import { Highlight, themes, type Language } from 'prism-react-renderer';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy, ClipboardPaste, Maximize2, Check } from 'lucide-react';
 import type { CodeTabsProps } from './types';
 
@@ -11,21 +12,18 @@ const CodeTabs: FC<CodeTabsProps> = ({ solutions, activeLanguage, onLanguageChan
     { id: 'java', label: 'Java' },
     { id: 'python', label: 'Python' },
     { id: 'javascript', label: 'JavaScript' },
-    { id: 'csharp', label: 'C#' },
-    { id: 'go', label: 'Go' }
+    
   ];
 
   // Filter to only show languages that have solutions
   const availableLanguages = languages.filter(lang => solutions[lang.id]);
 
-  const getLanguageForPrism = (lang: string): Language => {
+  const getLanguageForHighlighter = (lang: string): string => {
     switch (lang) {
       case 'cpp': return 'cpp';
       case 'java': return 'java';
       case 'python': return 'python';
       case 'javascript': return 'javascript';
-      case 'csharp': return 'csharp';
-      case 'go': return 'go';
       default: return 'javascript';
     }
   };
@@ -37,17 +35,17 @@ const CodeTabs: FC<CodeTabsProps> = ({ solutions, activeLanguage, onLanguageChan
   };
 
   return (
-    <div className="code-section border border-zinc-800 rounded-lg overflow-hidden">
+    <div className="overflow-hidden border rounded-lg code-section border-zinc-800">
       {/* Code Tabs Header */}
-      <div className="flex items-center justify-between bg-zinc-900/50 border-b border-zinc-800">
-        <div className="flex overflow-x-auto no-scrollbar">
+      <div className="flex items-center justify-between border-b bg-zinc-900/50 border-zinc-800">
+        <div className="flex overflow-x-auto scrollbar-hide">
           {availableLanguages.map((lang) => (
             <button
               key={lang.id}
               onClick={() => onLanguageChange(lang.id)}
-              className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
                 activeLanguage === lang.id
-                  ? 'text-white bg-zinc-800/50'
+                  ? 'text-white bg-zinc-800/50 border-b-2 border-[#FF6D00]'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800/30'
               }`}
             >
@@ -57,61 +55,57 @@ const CodeTabs: FC<CodeTabsProps> = ({ solutions, activeLanguage, onLanguageChan
         </div>
         
         {/* Code Editor Utils */}
-        <div className="flex items-center gap-1 px-2">
+        <div className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 flex-shrink-0">
           <button
             onClick={handleCopy}
-            className="p-2 text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 transition-colors text-zinc-400 hover:text-white"
             title="Copy code"
           >
-            {copied ? <Check size={18} /> : <Copy size={18} />}
+            {copied ? <Check size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Copy size={16} className="sm:w-[18px] sm:h-[18px]" />}
           </button>
           <button
-            className="p-2 text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 transition-colors text-zinc-400 hover:text-white hidden xs:block"
             title="Paste to editor"
           >
-            <ClipboardPaste size={18} />
+            <ClipboardPaste size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
           <button
-            className="p-2 text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 transition-colors text-zinc-400 hover:text-white hidden xs:block"
             title="Maximize"
           >
-            <Maximize2 size={16} />
+            <Maximize2 size={14} className="sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
 
       {/* Code Content */}
-      <div className="relative">
-        <Highlight
-          theme={themes.vsDark}
-          code={solutions[activeLanguage] || '// No solution available for this language'}
-          language={getLanguageForPrism(activeLanguage)}
+      <div className="relative bg-[#1e1e1e] overflow-x-auto">
+        <SyntaxHighlighter
+          language={getLanguageForHighlighter(activeLanguage)}
+          style={vscDarkPlus}
+          showLineNumbers={true}
+          customStyle={{
+            margin: 0,
+            padding: '0.75rem',
+            background: '#1e1e1e',
+            fontSize: '0.75rem',
+            borderRadius: 0,
+          }}
+          lineNumberStyle={{
+            minWidth: '2.5em',
+            paddingRight: '0.75em',
+            color: '#858585',
+            textAlign: 'right',
+          }}
+          codeTagProps={{
+            style: {
+              fontSize: '0.75rem',
+              lineHeight: '1.5',
+            }
+          }}
         >
-          {({ className, style, tokens, getLineProps, getTokenProps }) => (
-            <div className="flex">
-              {/* Line Numbers */}
-              <div className="flex-shrink-0 py-4 px-2 bg-zinc-900/30 text-zinc-600 text-sm font-mono select-none">
-                {tokens.map((_, i) => (
-                  <div key={i} className="text-right leading-6">{i + 1}</div>
-                ))}
-              </div>
-              
-              {/* Code */}
-              <pre 
-                className={`${className} flex-1 p-4 overflow-x-auto`} 
-                style={{ ...style, backgroundColor: 'transparent', margin: 0 }}
-              >
-                {tokens.map((line, i) => (
-                  <div key={i} {...getLineProps({ line, key: i })} className="leading-6">
-                    {line.map((token, key) => (
-                      <span key={key} {...getTokenProps({ token, key })} />
-                    ))}
-                  </div>
-                ))}
-              </pre>
-            </div>
-          )}
-        </Highlight>
+          {solutions[activeLanguage] || '// No solution available for this language'}
+        </SyntaxHighlighter>
       </div>
     </div>
   );

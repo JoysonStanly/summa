@@ -4,6 +4,149 @@ import User from '../models/User';
 import Progress from '../models/Progress';
 import Submission from '../models/Submission';
 
+// Helper to format user data for response
+const formatUserData = (user: any) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  avatar: user.avatar || '',
+  bio: user.bio || '',
+  mobile: user.mobile || '',
+  countryCode: user.countryCode || '+91',
+  location: user.location || '',
+  university: user.university || '',
+  educationYear: user.educationYear || '',
+  skills: user.skills || [],
+  socialLinks: user.socialLinks || {},
+  projects: user.projects || [],
+  coins: user.coins,
+  completedProblems: user.completedProblems,
+  streakData: user.streakData,
+  createdAt: user.createdAt,
+});
+
+// @desc    Get current user's profile
+// @route   GET /api/v1/profile/me
+// @access  Private
+export const getMyProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.user?._id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Get progress stats
+    const progress = await Progress.find({ userId: user._id });
+    const completedCount = progress.filter((p) => p.completed).length;
+    const totalAttempts = progress.reduce((sum, p) => sum + p.attempts, 0);
+    const totalTimeSpent = progress.reduce((sum, p) => sum + p.timeSpent, 0);
+
+    // Get submission stats
+    const submissions = await Submission.find({ userId: user._id });
+    const acceptedSubmissions = submissions.filter(
+      (s) => s.status === 'accepted'
+    ).length;
+    const totalSubmissions = submissions.length;
+
+    // Calculate accuracy
+    const accuracy =
+      totalSubmissions > 0
+        ? ((acceptedSubmissions / totalSubmissions) * 100).toFixed(2)
+        : '0.00';
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: formatUserData(user),
+        stats: {
+          problemsSolved: completedCount,
+          totalAttempts,
+          totalSubmissions,
+          acceptedSubmissions,
+          accuracy: `${accuracy}%`,
+          totalTimeSpent: Math.floor(totalTimeSpent / 60),
+          currentStreak: user.streakData.currentStreak,
+          maxStreak: user.streakData.maxStreak,
+        },
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch profile',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get user profile by username/name
+// @route   GET /api/v1/profile/user/:username
+// @access  Public
+export const getUserProfileByUsername = async (req: Request, res: Response) => {
+  try {
+    const username = decodeURIComponent(req.params.username);
+    
+    // Find user by name (case-insensitive)
+    const user = await User.findOne({ 
+      name: { $regex: new RegExp(`^${username}$`, 'i') }
+    }).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Get progress stats
+    const progress = await Progress.find({ userId: user._id });
+    const completedCount = progress.filter((p) => p.completed).length;
+    const totalAttempts = progress.reduce((sum, p) => sum + p.attempts, 0);
+    const totalTimeSpent = progress.reduce((sum, p) => sum + p.timeSpent, 0);
+
+    // Get submission stats
+    const submissions = await Submission.find({ userId: user._id });
+    const acceptedSubmissions = submissions.filter(
+      (s) => s.status === 'accepted'
+    ).length;
+    const totalSubmissions = submissions.length;
+
+    // Calculate accuracy
+    const accuracy =
+      totalSubmissions > 0
+        ? ((acceptedSubmissions / totalSubmissions) * 100).toFixed(2)
+        : '0.00';
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: formatUserData(user),
+        stats: {
+          problemsSolved: completedCount,
+          totalAttempts,
+          totalSubmissions,
+          acceptedSubmissions,
+          accuracy: `${accuracy}%`,
+          totalTimeSpent: Math.floor(totalTimeSpent / 60),
+          currentStreak: user.streakData.currentStreak,
+          maxStreak: user.streakData.maxStreak,
+        },
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user profile',
+      error: error.message,
+    });
+  }
+};
+
 // @desc    Get user profile
 // @route   GET /api/v1/profile/:userId
 // @access  Public
@@ -40,16 +183,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          coins: user.coins,
-          completedProblems: user.completedProblems,
-          streakData: user.streakData,
-          createdAt: user.createdAt,
-        },
+        user: formatUserData(user),
         stats: {
           problemsSolved: completedCount,
           totalAttempts,
@@ -76,8 +210,19 @@ export const getUserProfile = async (req: Request, res: Response) => {
 // @access  Private
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, bio: _bio, avatar: _avatar, location: _location, website: _website, github: _github, linkedin: _linkedin } =
-      req.body;
+    const { 
+      name, 
+      bio, 
+      avatar, 
+      mobile,
+      countryCode,
+      location, 
+      university,
+      educationYear,
+      skills,
+      socialLinks,
+      projects
+    } = req.body;
 
     const user = await User.findById(req.user?._id);
 
@@ -89,21 +234,75 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     }
 
     // Update allowed fields
-    if (name) user.name = name;
-    // Add custom fields if they don't exist in User model
-    // You may need to add these to User schema
+    if (name !== undefined) user.name = name;
+    if (bio !== undefined) user.bio = bio;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (mobile !== undefined) user.mobile = mobile;
+    if (countryCode !== undefined) user.countryCode = countryCode;
+    if (location !== undefined) user.location = location;
+    if (university !== undefined) user.university = university;
+    if (educationYear !== undefined) user.educationYear = educationYear;
+    if (skills !== undefined) user.skills = skills;
+    if (socialLinks !== undefined) user.socialLinks = socialLinks;
+    if (projects !== undefined) user.projects = projects;
 
     await user.save();
 
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      data: user,
+      data: formatUserData(user),
     });
   } catch (error: any) {
     res.status(400).json({
       success: false,
       message: 'Failed to update profile',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get current user's activity
+// @route   GET /api/v1/profile/activity/me
+// @access  Private
+export const getMyActivity = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?._id;
+    const { limit = 20 } = req.query;
+
+    // Get recent submissions
+    const recentSubmissions = await Submission.find({ userId })
+      .populate('problemId', 'title slug difficulty')
+      .sort({ createdAt: -1 })
+      .limit(Number(limit));
+
+    // Get activity heatmap data (last 365 days)
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    const submissions = await Submission.find({
+      userId,
+      createdAt: { $gte: oneYearAgo },
+    }).select('createdAt status');
+
+    // Group by date
+    const activityMap: { [key: string]: number } = {};
+    submissions.forEach((submission) => {
+      const date = submission.createdAt.toISOString().split('T')[0];
+      activityMap[date] = (activityMap[date] || 0) + 1;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        recentSubmissions,
+        activityHeatmap: activityMap,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity',
       error: error.message,
     });
   }

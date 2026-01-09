@@ -99,7 +99,7 @@ const SessionSchema: Schema = new Schema(
 
 // Indexes
 SessionSchema.index({ date: 1 });
-SessionSchema.index({ instructor: 1 });
+// instructor has index:true on field definition (no need to duplicate)
 SessionSchema.index({ category: 1 });
 
 export default mongoose.model<ISession>('Session', SessionSchema);

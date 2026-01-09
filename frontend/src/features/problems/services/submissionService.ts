@@ -1,5 +1,4 @@
 import api from '@/services/api/axiosClient';
-import { getProblem } from '../data/problems';
 
 export type SubmissionStatus = 'accepted' | 'rejected' | 'error' | 'timeout';
 
@@ -79,15 +78,15 @@ const submissionService = {
 
   /**
    * Mock local executor – simulates running code and returns per-test results
+   * Note: This is a simplified mock. In production, use backend API for code execution.
    */
   runLocally: async (
-    problemId: string,
+    testCases: Array<{ id: string; input: string[]; output: string }>,
     code: string,
-    language: string
+    language: string,
+    problemId?: string
   ): Promise<SubmissionResult> => {
-    // Basic, local-only simulation: use our static problems data
-    const problem = getProblem('arrays', problemId) || getProblem('arrays', 'linear-search');
-    const tests = problem?.testCases || [];
+    const tests = testCases || [];
     const results: TestResult[] = [];
 
     // Very naive executors for a couple of demo problems
@@ -100,12 +99,8 @@ const submissionService = {
         const target = JSON.parse(t.input[1]);
         let actual: number | string = -1;
 
-        if (problem?.id === 'linear-search') {
-          actual = execLinearSearch(arr, target);
-        } else {
-          // Default: return first output to keep mock simple
-          actual = t.output;
-        }
+        // Simple demo: attempt linear search for arrays
+        actual = execLinearSearch(arr, target);
 
         const expected = Number.isNaN(Number(t.output)) ? t.output : Number(t.output);
         const passed = String(actual) === String(expected);
@@ -117,7 +112,7 @@ const submissionService = {
     }
 
   // reference inputs to avoid unused warnings in mock
-  void code; void language;
+  void code; void language; void problemId;
   const allPassed = results.every(r => r.passed);
     return {
       status: allPassed ? 'accepted' : 'rejected',

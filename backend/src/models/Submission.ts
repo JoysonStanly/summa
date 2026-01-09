@@ -89,6 +89,7 @@ const SubmissionSchema: Schema = new Schema(
 );
 
 // Compound indexes for common queries
+// Note: userId and problemId have index:true on field definitions
 SubmissionSchema.index({ userId: 1, problemId: 1 });
 SubmissionSchema.index({ problemId: 1, status: 1 });
 SubmissionSchema.index({ userId: 1, createdAt: -1 });

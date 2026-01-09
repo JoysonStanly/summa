@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useToast } from '@/shared/hooks/ToastContext';
 import { ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,6 +28,7 @@ const topics = [
 
 const RoadmapPage: React.FC = () => {
   const navigate = useNavigate();
+  const { success: toastSuccess } = useToast();
   const [days, setDays] = useState(180);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedTopics, setSelectedTopics] = useState<string[]>(['All topics']);
@@ -73,8 +75,8 @@ const RoadmapPage: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    // Navigate to roadmap view page
-    navigate('/plus/dsa/roadmap/view');
+    toastSuccess('Roadmap started! Good luck on your journey.');
+    navigate('/dsa/roadmap/view');
   };
 
   return (

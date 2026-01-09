@@ -51,7 +51,7 @@ const ProgressCircle = ({
         className="absolute inset-0 flex items-center justify-center text-xs font-medium"
         style={{ color }}
       >
-        {percentage > 0 ? `${percentage}%` : ''}
+        {`${percentage}%`}
       </div>
     </div>
   );

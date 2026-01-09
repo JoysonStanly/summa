@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { Subject, Module, Topic } from '../models/Subject';
-import githubService from '../services/githubService';
 
 // @desc    Get all subjects
 // @route   GET /api/v1/subjects
@@ -38,13 +37,8 @@ export const getSubject = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Fetch content from GitHub
-    let content = null;
-    try {
-      content = await githubService.fetchSubjectContent(subject.githubPath);
-    } catch (error: any) {
-      console.error('Failed to fetch content from GitHub:', error.message);
-    }
+    // Content fetching disabled (githubService removed)
+    const content = null;
 
     res.status(200).json({
       success: true,
@@ -100,13 +94,8 @@ export const getModule = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Fetch content from GitHub
-    let content = null;
-    try {
-      content = await githubService.fetchModuleContent(module.githubPath);
-    } catch (error: any) {
-      console.error('Failed to fetch content from GitHub:', error.message);
-    }
+    // Content fetching disabled (githubService removed)
+    const content = null;
 
     res.status(200).json({
       success: true,
@@ -162,13 +151,8 @@ export const getTopic = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Fetch content from GitHub
-    let content = null;
-    try {
-      content = await githubService.fetchTopicContent(topic.githubPath);
-    } catch (error: any) {
-      console.error('Failed to fetch content from GitHub:', error.message);
-    }
+    // Content fetching disabled (githubService removed)
+    const content = null;
 
     res.status(200).json({
       success: true,

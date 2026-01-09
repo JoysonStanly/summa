@@ -2,7 +2,6 @@ import { Response } from 'express';
 import { AuthRequest } from '../types';
 import Quiz from '../models/Quiz';
 import User from '../models/User';
-import githubService from '../services/githubService';
 
 // @desc    Get all quizzes
 // @route   GET /api/v1/quizzes
@@ -74,8 +73,8 @@ export const getQuizQuestions = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
-    // Fetch questions from GitHub
-    const questions = await githubService.fetchQuizQuestions(quiz.githubPath);
+    // Questions fetching disabled (githubService removed)
+    const questions: any[] = [];
 
     res.status(200).json({
       success: true,
@@ -113,8 +112,8 @@ export const submitQuizAttempt = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    // Fetch correct answers from GitHub
-    const questions = await githubService.fetchQuizQuestions(quiz.githubPath);
+    // Questions fetching disabled (githubService removed)
+    const questions: any[] = [];
 
     // Calculate score
     let score = 0;

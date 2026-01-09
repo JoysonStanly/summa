@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import UnifiedSidebar from "@/shared/components/layout/UnifiedSidebar";
-import { ProblemStatement, CodeEditor, TestCases, Submissions } from '../components';
+import { ProblemStatement, CodeEditor, TestCases, TestCaseDisplay, TestCasesSkeleton, Submissions } from '../components';
+import { LoadingSpinner, AlertDialog } from '@/components/ui';
 // import { getProblem } from '../data/problems'; // OLD: Static data
 import {
   Play,
@@ -10,10 +11,19 @@ import {
   MessageSquare,
   FileCode,
   ChevronLeft,
+  ChevronRight,
   BrainCircuit,
   Settings,
   RotateCcw,
-  Code
+  Code,
+  ThumbsUp,
+  ThumbsDown,
+  Bug,
+  StickyNote,
+  BookOpen,
+  Clock,
+  Users,
+  Sparkles
 } from 'lucide-react';
 import Editorial from '../editorial/Editorial';
 import Discussion from "@/shared/components/ui/Discussion";
@@ -33,18 +43,47 @@ const ProblemPage = () => {
 
   const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [isStudyViewActive, setIsStudyViewActive] = useState(false);
-  const { setLanguageForProblem, getLanguageForProblem, updateEditorContent } = useProblemStore();
   
   // Determine actual problemId - it could be in problemId or subtopicId param depending on route structure
   const actualProblemId = problemId || subtopicId || '';
+  
+  // Get all needed values from useProblemStore in one place
+  const { 
+    setLanguageForProblem, 
+    getLanguageForProblem, 
+    updateEditorContent,
+    editorContent,
+    currentProblem, 
+    fetchProblem, 
+    isLoading, 
+    error: problemError,
+    testResults,
+    isRunningTests,
+    runTests,
+    clearTestResults,
+    editorConfig,
+    updateEditorConfig
+  } = useProblemStore();
+  
   const initialLang = getLanguageForProblem(actualProblemId) || 'java';
   const [language, setLanguage] = useState(initialLang);
   const [selectedTestCase, setSelectedTestCase] = useState('1');
   const [editorKey, setEditorKey] = useState(0);
+  const codeEditorRef = useRef<any>(null);
+  const [isCodeEditorFullscreen, setIsCodeEditorFullscreen] = useState(false);
+  const [showTestResults, setShowTestResults] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const [showFontSizeDropdown, setShowFontSizeDropdown] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   // Screen size tracking for responsive behavior
   const [isLg, setIsLg] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
 
-  // 🎯 Drag-to-overlay state
+  // Debug: Log when fullscreen state changes
+  useEffect(() => {
+    console.log('Code editor fullscreen state changed:', isCodeEditorFullscreen);
+  }, [isCodeEditorFullscreen]);
+
+  // 🎯 Drag-to-overlay state (horizontal)
   const [leftPanelWidth, setLeftPanelWidth] = useState(600); // Default 600px
   const [isDraggingState, setIsDraggingState] = useState(false); // For UI feedback
   const isDragging = useRef(false);
@@ -52,16 +91,93 @@ const ProblemPage = () => {
   const dragStartWidth = useRef(0);
 
   const MIN_WIDTH = 40; // Minimum - keep handle visible
-  const MAX_WIDTH = typeof window !== 'undefined' ? window.innerWidth - 400 : 900; // Leave 400px for right panel
+  const MAX_WIDTH = typeof window !== 'undefined' ? window.innerWidth - 700 : 900; // Leave minimum 600px for right panel
+
+  // 🎯 Vertical splitter state (between editor and test cases)
+  const [editorHeight, setEditorHeight] = useState(350); // Default 350px for editor (reduced to give more space to test cases)
+  const [isVerticalDragging, setIsVerticalDragging] = useState(false);
+  const verticalDragging = useRef(false);
+  const verticalDragStartY = useRef(0);
+  const verticalDragStartHeight = useRef(0);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
+
+  const MIN_EDITOR_HEIGHT = 0; // Minimum editor height - allows near full collapse
+  const MIN_TEST_HEIGHT = 50; // Minimum test cases height - allows near full collapse
 
   // const { addCompletedProblem, updateStreak } = useUserStore(); // OLD
   const { updateProgress } = useUserStore(); // NEW: Use API-based progress
-  const { currentProblem, fetchProblem, isLoading, error: problemError } = useProblemStore();
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info' | 'warning'>('info');
 
+  // 🎯 Submission result state - stores latest submission to display in Submissions tab
+  const [latestSubmission, setLatestSubmission] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Loading state for Submit button
+
+  // 🎯 Footer state - Like/Dislike/Checkbox for all tabs
+  const [isLiked, setIsLiked] = useState(false);
+  const [isDisliked, setIsDisliked] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const [isLoadingCheckbox, setIsLoadingCheckbox] = useState(true);
+
   // 🔥 NEW: Fetch DSA problems dynamically from backend
   const { topics: dsaTopics, loading: topicsLoading } = useDSAProblems();
+
+  // 🔥 Handle checkbox change to update streak in calendar
+  const handleCheckboxChange = async () => {
+    if (!currentProblem?._id) {
+      console.error('Cannot update streak: Problem not loaded yet');
+      return;
+    }
+
+    // 🔍 Debug: Log entire problem object to see what fields it has
+    console.log('📋 Current problem object:', {
+      _id: currentProblem._id,
+      id: currentProblem.id,
+      slug: currentProblem.slug,
+      title: currentProblem.title,
+      fullObject: currentProblem
+    });
+
+    const newAutoPlayValue = !autoPlay;
+    setAutoPlay(newAutoPlayValue);
+    
+    if (newAutoPlayValue) {
+      // Checkbox is being checked - add streak
+      try {
+        console.log('Updating streak with problemId:', currentProblem._id);
+        await updateProgress('streak', currentProblem._id);
+        console.log('Streak updated successfully');
+      } catch (error) {
+        console.error('Failed to update streak:', error);
+        // Revert checkbox on error
+        setAutoPlay(false);
+      }
+    } else {
+      // Checkbox is being unchecked - remove from daily checked problems
+      try {
+        console.log('Removing problem from checked list:', currentProblem._id);
+        const response = await fetch('/api/v1/progress/uncheck', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ problemId: currentProblem._id })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to uncheck problem');
+        }
+        console.log('Problem unchecked successfully');
+        
+        // Trigger calendar refresh
+        const { refreshStreak } = useUserStore.getState();
+        refreshStreak();
+      } catch (error) {
+        console.error('Failed to uncheck problem:', error);
+        // Revert checkbox on error
+        setAutoPlay(true);
+      }
+    }
+  };
 
   // Fetch problem from API
   useEffect(() => {
@@ -70,7 +186,46 @@ const ProblemPage = () => {
     }
   }, [actualProblemId, fetchProblem]);
 
+  // Load checkbox state from database when problem changes
+  useEffect(() => {
+    const fetchCheckboxState = async () => {
+      if (!currentProblem?._id) return;
+      
+      setIsLoadingCheckbox(true);
+      try {
+        const response = await fetch('/api/v1/progress/checked', {
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          const checkedProblems = result.data || [];
+          setAutoPlay(checkedProblems.includes(currentProblem._id));
+        }
+      } catch (error) {
+        console.error('Failed to fetch checkbox state:', error);
+      } finally {
+        setIsLoadingCheckbox(false);
+      }
+    };
+
+    fetchCheckboxState();
+  }, [currentProblem?._id]);
+
   const problem = currentProblem; // Use API data instead of static getProblem()
+
+  const isInitialLoad = isLoading && !problem;
+  const isSwitchingProblem = Boolean(isLoading && problem && actualProblemId && problem._id !== actualProblemId);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Problem loaded:', problem);
+    console.log('Test cases:', problem?.testCases);
+    console.log('Problem ID:', actualProblemId);
+    console.log('isRunningTests:', isRunningTests);
+    console.log('showTestResults:', showTestResults);
+    console.log('testResults:', testResults);
+  }, [problem, actualProblemId, isRunningTests, showTestResults, testResults]);
 
   useEffect(() => {
     if (problem) {
@@ -89,7 +244,7 @@ const ProblemPage = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // 🎯 Drag handler implementation
+  // 🎯 Horizontal drag handler implementation
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
@@ -125,6 +280,51 @@ const ProblemPage = () => {
     };
   }, []);
 
+  // 🎯 Vertical drag handler implementation (for editor/test cases splitter)
+  useEffect(() => {
+    const handleVerticalMouseMove = (e: MouseEvent) => {
+      if (!verticalDragging.current) return;
+
+      // Calculate actual available container height dynamically
+      const rightPanel = rightPanelRef.current;
+      const containerHeight = rightPanel 
+        ? rightPanel.clientHeight - 50 // Subtract header height
+        : window.innerHeight - 200; // Fallback
+
+      // Calculate new height based on mouse position
+      const deltaY = e.clientY - verticalDragStartY.current;
+      const newHeight = verticalDragStartHeight.current + deltaY; // Dragging down increases editor height
+
+      // Calculate max height (leave minimum space for test cases)
+      const maxHeight = containerHeight - MIN_TEST_HEIGHT;
+
+      // Clamp height between min and max
+      const clampedHeight = Math.max(MIN_EDITOR_HEIGHT, Math.min(maxHeight, newHeight));
+      setEditorHeight(clampedHeight);
+
+      // Prevent text selection while dragging
+      e.preventDefault();
+    };
+
+    const handleVerticalMouseUp = () => {
+      if (verticalDragging.current) {
+        verticalDragging.current = false;
+        setIsVerticalDragging(false);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        document.body.style.pointerEvents = '';
+      }
+    };
+
+    window.addEventListener('mousemove', handleVerticalMouseMove);
+    window.addEventListener('mouseup', handleVerticalMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleVerticalMouseMove);
+      window.removeEventListener('mouseup', handleVerticalMouseUp);
+    };
+  }, []);
+
   // 🎯 Start drag handler
   const handleDragStart = (e: React.MouseEvent) => {
     isDragging.current = true;
@@ -142,13 +342,62 @@ const ProblemPage = () => {
     setLeftPanelWidth(600);
   };
 
+  // 🎯 Start vertical drag handler
+  const handleVerticalDragStart = (e: React.MouseEvent) => {
+    verticalDragging.current = true;
+    setIsVerticalDragging(true);
+    verticalDragStartY.current = e.clientY;
+    verticalDragStartHeight.current = editorHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    document.body.style.pointerEvents = 'none';
+    e.preventDefault();
+  };
+
+  // 🎯 Double-click to reset editor height
+  const handleVerticalDoubleClick = () => {
+    setEditorHeight(500);
+  };
+
+  // Show loading state (only on first load)
+  if (isInitialLoad) {
+    return (
+      <div className="flex h-screen bg-[#0a0a0a] text-white items-center justify-center">
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <LoadingSpinner />
+          </div>
+          <p className="text-gray-400">Loading problem...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (problemError) {
+    return (
+      <div className="flex h-screen bg-[#0a0a0a] text-white items-center justify-center">
+        <div className="max-w-md text-center">
+          <div className="mb-4 text-6xl text-red-500">⚠️</div>
+          <h2 className="mb-2 text-2xl font-bold">Error Loading Problem</h2>
+          <p className="mb-6 text-gray-400">{problemError}</p>
+          <button
+            onClick={() => navigate('/dsa')}
+            className="px-6 py-2 transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            Back to Problems
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!problem) return null;
 
   const languages = {
     java: 'Java',
     python: 'Python',
     javascript: 'JavaScript',
-    typescript: 'TypeScript',
     cpp: 'C++'
   };
 
@@ -159,6 +408,17 @@ const ProblemPage = () => {
     const langKey = getLanguageKey(e.target.value);
     setLanguage(langKey);
     setLanguageForProblem(actualProblemId, langKey);
+    // Force editor to re-mount with new starter code
+    setEditorKey(prev => prev + 1);
+  };
+
+  const handleResetCode = () => {
+    if (!problem) return;
+    const starterCode = problem.starterCode?.[language as keyof typeof problem.starterCode] || 
+      problem.starterCode?.typescript || 
+      `// Write your solution here for ${problem.title}\n\nfunction solution() {\n  // Your code here\n}`;
+    updateEditorContent(actualProblemId, starterCode);
+    setEditorKey(prev => prev + 1);
   };
 
   // Use starterCode from API (not defaultCode from static data)
@@ -169,14 +429,29 @@ const ProblemPage = () => {
 
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden">
+    <>
+      <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden">
       {/* Conditional rendering: Show only Editorial in Study View */}
       {isStudyViewActive ? (
-        <EditorialView 
-          problem={problem} 
-          isStudyViewActive={isStudyViewActive}
-          onStudyViewChange={setIsStudyViewActive}
-        />
+        isSwitchingProblem ? (
+          <div className="flex flex-1 min-h-0 p-6">
+            <div className="w-full flex-1 min-h-0 rounded-xl bg-[#141414] p-6 border border-[#1f1f1f] flex flex-col gap-5">
+              <div>
+                <div className="w-2/3 h-6 rounded-md skeleton" />
+                <div className="w-1/2 h-4 mt-3 rounded-md skeleton" />
+              </div>
+              <div className="w-full h-28 rounded-xl skeleton" />
+              <div className="w-full h-28 rounded-xl skeleton" />
+              <div className="flex-1 w-full rounded-xl skeleton" />
+            </div>
+          </div>
+        ) : (
+          <EditorialView 
+            problem={problem} 
+            isStudyViewActive={isStudyViewActive}
+            onStudyViewChange={setIsStudyViewActive}
+          />
+        )
       ) : (
         <>
           {/* Sidebar - Now using dynamic data from backend */}
@@ -223,29 +498,9 @@ const ProblemPage = () => {
                   <div className="relative group">
                     <a className="md:flex hidden flex-row gap-2 items-center bg-[#FEF7E6] dark:bg-[#271F11] p-1 rounded-md" href="/plus/leaderboard">
                       <p className="text-[#E0990A] text-lg ml-2">27121</p>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 21 20" fill="none">
-                        <g clipPath="url(#clip0_2952_20139)">
-                          <path d="M10.5039 20.0039C16.0268 20.0039 20.5039 15.5268 20.5039 10.0039C20.5039 4.48106 16.0268 0.00390625 10.5039 0.00390625C4.98106 0.00390625 0.503906 4.48106 0.503906 10.0039C0.503906 15.5268 4.98106 20.0039 10.5039 20.0039Z" fill="#FACC15"></path>
-                          <path d="M10.5057 18.3787C15.13 18.3787 18.8787 14.63 18.8787 10.0057C18.8787 5.3815 15.13 1.63281 10.5057 1.63281C5.8815 1.63281 2.13281 5.3815 2.13281 10.0057C2.13281 14.63 5.8815 18.3787 10.5057 18.3787Z" fill="#E0990A"></path>
-                          <path d="M10.5028 17.6618C14.7327 17.6618 18.1618 14.2327 18.1618 10.0028C18.1618 5.77281 14.7327 2.34375 10.5028 2.34375C6.27281 2.34375 2.84375 5.77281 2.84375 10.0028C2.84375 14.2327 6.27281 17.6618 10.5028 17.6618Z" fill="#E0990A"></path>
-                          <path opacity="0.1" d="M17.3951 2.76172L2.75391 16.3225C2.9842 16.6044 3.22976 16.8735 3.48866 17.1288L18.1435 3.55513C17.9088 3.27709 17.6586 3.01262 17.3951 2.76172Z" fill="#121212"></path>
-                          <path opacity="0.1" d="M18.9004 4.57422L4.44922 17.959C5.16603 18.5054 5.95945 18.9558 6.80959 19.2942L20.0536 7.02743C19.7811 6.15135 19.3891 5.32861 18.9004 4.57422Z" fill="#121212"></path>
-                          <path opacity="0.1" d="M14.1415 0.6875L0.9375 12.9172C1.22258 13.8541 1.64147 14.7322 2.17186 15.5302L16.6521 2.11822C15.8948 1.52697 15.0508 1.04312 14.1415 0.6875Z" fill="#121212"></path>
-                          <path d="M3.16406 8.98659H4.58581L4.04596 11.7714H5.18409L5.68127 8.98659H7.07248L7.17987 8.44141H3.27242L3.16406 8.98659Z" fill="#E0990A"></path>
-                          <path d="M7.5403 8.44141L7.09766 10.9336L7.78902 11.7714H10.8313L11.4121 8.44141H10.299L9.80807 11.2173H8.42535L8.20403 10.9475L8.63261 8.44141H7.5403Z" fill="#E0990A"></path>
-                          <path d="M17.1807 8.44141L17.0815 9.01083H17.6349L17.5455 9.50657H16.9921L16.8929 10.0728H16.3683L16.4675 9.50657H15.9141L16.0004 9.01083H16.5569L16.6561 8.44141H17.1807Z" fill="#E0990A"></path>
-                          <path d="M11.2031 11.7714H12.2996L12.477 10.6583H15.2514L15.3617 10.1065H12.5812L12.7097 9.26803L13.0343 8.98005H14.449L14.339 9.54972H15.4475L15.6434 8.44141H12.6118L11.638 9.27409L11.2031 11.7714Z" fill="#E0990A"></path>
-                          <path d="M3.37891 8.7798H4.80066L4.2608 11.5646H5.39893L5.89612 8.7798H7.28732L7.39471 8.23438H3.48726L3.37891 8.7798Z" fill="#FACC15"></path>
-                          <path d="M7.75515 8.23438L7.3125 10.7269L8.0041 11.5646H11.0464L11.6272 8.23438H10.5138L10.0229 11.0102H8.64019L8.41887 10.7407L8.84746 8.23438H7.75515Z" fill="#FACC15"></path>
-                          <path d="M17.3994 8.23438L17.3003 8.8038H17.8537L17.7642 9.29954H17.2108L17.1117 9.86581H16.5871L16.6862 9.29954H16.1328L16.2191 8.8038H16.7757L16.8748 8.23438H17.3994Z" fill="#FACC15"></path>
-                          <path d="M11.418 11.5646H12.5144L12.6918 10.4512H15.4663L15.5766 9.89951H12.7961L12.9246 9.061L13.2492 8.77326H14.6641L14.5538 9.34268H15.6624L15.8582 8.23438H12.8266L11.8529 9.06706L11.418 11.5646Z" fill="#FACC15"></path>
-                        </g>
-                        <defs>
-                          <clipPath id="clip0_2952_20139">
-                            <rect width="20" height="20" fill="white" transform="translate(0.5)"></rect>
-                          </clipPath>
-                        </defs>
-                      </svg>
+                      <div className="flex items-center justify-center text-xl w-7 h-7">
+                        🪙
+                      </div>
                     </a>
                     <div className="absolute opacity-0 invisible right-0 top-12 bg-gradient-to-br bg-white dark:from-zinc-800 dark:to-zinc-900 border dark:border-zinc-700 transform p-6 rounded-lg shadow-md w-80 z-50 transition-[opacity,visibility] duration-0 group-hover:transition-[opacity,visibility] group-hover:delay-[600ms] group-hover:duration-200 group-hover:opacity-100 group-hover:visible">
                       <div className="space-y-4">
@@ -280,18 +535,13 @@ const ProblemPage = () => {
                         <div className="relative mt-4">
                           <div className="flex items-start gap-2 p-2 rounded-md bg-amber-50 dark:bg-amber-900/30">
                             <div className="w-5 h-5">💰</div>
-                            <span className="text-[#637381] dark:text-gray-300 italic">Great going! Earn TUF+ Coins—exclusive rewards coming soon!</span>
+                            <span className="text-[#637381] dark:text-gray-300 italic">Great going! Earn Coins—exclusive rewards coming soon!</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <button className="relative flex items-center gap-3 px-4 py-2 text-white transition-all duration-200 ease-in-out bg-gray-700 rounded-md hover:bg-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700" aria-label="Toggle To-Do Window">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 25 24" fill="none">
-                    <path d="M12.5 22C12.8574 22 13.2149 21.98 13.5634 21.9401C14.1589 21.8719 14.3933 21.2073 14.115 20.6764C13.9048 20.2755 13.4476 19.9793 12.9952 19.9943C12.8229 20 12.654 20 12.5 20C8.1 20 4.5 16.4 4.5 12C4.5 7.6 8.1 4 12.5 4C13.0776 4 13.6031 4.05213 14.1141 4.15639C14.479 4.23085 14.8633 4.13667 15.1267 3.87332C15.6657 3.33425 15.4471 2.41754 14.7023 2.2549C13.9805 2.09727 13.2403 2 12.5 2C7 2 2.5 6.5 2.5 12C2.5 17.5 7 22 12.5 22ZM9.7 12.2C9.3134 11.8134 9.3134 11.1866 9.7 10.8C10.0866 10.4134 10.7134 10.4134 11.1 10.8L13.5 13.2L21.4 5.3C21.7866 4.9134 22.4134 4.9134 22.8 5.3C23.1866 5.6866 23.1866 6.3134 22.8 6.7L14.2071 15.2929C13.8166 15.6834 13.1834 15.6834 12.7929 15.2929L9.7 12.2Z" fill="#919EAB"></path>
-                  </svg>
-                </button>
                 <button className="relative visible w-10 h-10 border-0 burger md:hidden" aria-label="Toggle menu" type="button">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu block absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 scale-100 text-gray-900 !opacity-100 duration-200 motion-reduce:transition-none dark:text-gray-100">
                     <line x1="4" x2="20" y1="12" y2="12"></line>
@@ -309,6 +559,7 @@ const ProblemPage = () => {
           <div className="relative flex-1 overflow-hidden">
             {/* =============== RIGHT PANEL (Absolute positioning for proper width constraint) =============== */}
             <div 
+              ref={rightPanelRef}
               className={`absolute top-0 right-0 bottom-0 flex flex-col bg-[#0e0e0e] ${!isDraggingState ? 'transition-all duration-300 ease-out' : ''}`}
               style={{ 
                 left: `${leftPanelWidth}px`,
@@ -333,43 +584,142 @@ const ProblemPage = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  {/* Font Size Dropdown */}
+                  <div className="relative">
+                    <button 
+                      type="button"
+                      onClick={() => setShowFontSizeDropdown(!showFontSizeDropdown)}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-400 hover:text-gray-300 bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#2a2a2a] rounded transition-colors h-8"
+                    >
+                      <span>{editorConfig.fontSize}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m6 9 6 6 6-6"></path>
+                      </svg>
+                    </button>
+                    
+                    {showFontSizeDropdown && (
+                      <div className="absolute top-full mt-1 left-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded shadow-lg z-50 py-1 min-w-[60px]">
+                        {[12, 13, 14, 15, 16, 17, 18, 19, 20].map(size => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => {
+                              updateEditorConfig({ fontSize: size });
+                              setShowFontSizeDropdown(false);
+                            }}
+                            className={`w-full px-3 py-1.5 text-xs text-left hover:bg-[#2a2a2a] transition-colors ${
+                              editorConfig.fontSize === size ? 'text-orange-400 bg-[#2a2a2a]' : 'text-gray-300'
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   
                   <button
-                    className="h-8 px-4 rounded-md text-sm font-medium bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white flex items-center gap-1"
-                    onClick={async () => {
-                      const result = await submissionService.runLocally(actualProblemId, '', language);
-                      setToastVariant(result.status === 'accepted' ? 'success' : 'warning');
-                      setToastMsg(`${result.message} • ${result.timeTaken}ms • ${result.memory}MB`);
-                    }}
-                  >
-                    <Play size={14} />
-                    Run
-                  </button>
-                  <button
-                    className="h-8 px-5 rounded-md text-sm font-medium text-white bg-[#FF6D00] hover:bg-[#ff7a1a]"
+                    className="h-8 px-4 rounded-md text-sm font-medium bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={async () => {
                       try {
-                        const result = await submissionService.runLocally(actualProblemId, '', language);
+                        console.log('Run button clicked');
+                        const code = ''; // Get code from editor
+                        
+                        // Show skeleton immediately
+                        setShowSkeleton(true);
+                        setShowTestResults(false);
+                        console.log('Skeleton shown, starting tests...');
+                        
+                        // Run tests in background
+                        const testPromise = runTests(actualProblemId, code, language);
+                        
+                        // Wait for 3 seconds minimum for loading animation
+                        await Promise.all([
+                          testPromise,
+                          new Promise(resolve => setTimeout(resolve, 3000))
+                        ]);
+                        
+                        console.log('Tests completed, showing results');
+                        // Hide skeleton and show results
+                        setShowSkeleton(false);
+                        setShowTestResults(true);
+                      } catch (error) {
+                        console.error('Error running tests:', error);
+                        setShowSkeleton(false);
+                        setToastVariant('error');
+                        setToastMsg('Failed to run tests');
+                        setShowTestResults(false);
+                      }
+                    }}
+                    disabled={showSkeleton}
+                  >
+                    <Play size={14} />
+                    {showSkeleton ? 'Running...' : 'Run'}
+                  </button>
+                  <button
+                    className="h-8 px-5 rounded-md text-sm font-medium text-white bg-[#FF6D00] hover:bg-[#ff7a1a] disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={async () => {
+                      try {
+                        // 🎯 Auto-switch to Submissions tab when Submit is clicked (like LeetCode)
+                        navigate(`/dsa/${topicId}/${subtopicId || actualProblemId}/${actualProblemId}?tab=submissions`);
+                        
+                        // 🎯 Show loading state for 3 seconds minimum
+                        setIsSubmitting(true);
+                        setLatestSubmission(null); // Clear previous submission
+                        
+                        // Run submission in background
+                        const submissionPromise = submissionService.runLocally(
+                          problem?.testCases || [],
+                          '',
+                          language,
+                          actualProblemId
+                        );
+                        
+                        // Wait for 3 seconds minimum for loading animation
+                        const [result] = await Promise.all([
+                          submissionPromise,
+                          new Promise(resolve => setTimeout(resolve, 3000))
+                        ]);
+                        
+                        // 🎯 Store submission result to display in Submissions tab
+                        setLatestSubmission({
+                          status: result.status === 'accepted' ? 'Accepted' : 'Wrong Answer',
+                          testCasesPassed: result.passedTests || 0,
+                          totalTestCases: problem?.testCases?.length || 0,
+                          memoryUsed: '2.83 KiB',
+                          language: language,
+                          timestamp: new Date().toISOString()
+                        });
+                        
+                        setIsSubmitting(false);
+                        
                         if (result.status === 'accepted') {
                           // Update progress via API
                           await updateProgress('solved', actualProblemId);
                         }
-                        setToastVariant(result.status === 'accepted' ? 'success' : 'error');
-                        setToastMsg(result.message || 'Submitted successfully!');
                       } catch (error) {
-                        setToastVariant('error');
-                        setToastMsg('Failed to submit solution');
+                        console.error('Submission error:', error);
+                        setIsSubmitting(false);
                       }
                     }}
+                    disabled={isSubmitting}
                   >
-                    Submit
+                    {isSubmitting ? 'Submitting...' : 'Submit'}
                   </button>
                 </div>
               </div>
 
-              {/* Code Editor */}
-              <div className="flex-1 overflow-hidden">
+              {/* Code Editor with flexible height */}
+              <div 
+                className="relative overflow-hidden"
+                style={{ 
+                  height: `${editorHeight}px`,
+                  minHeight: `${MIN_EDITOR_HEIGHT}px`,
+                  flexShrink: 0
+                }}
+              >
                 <CodeEditor
+                  ref={codeEditorRef}
                   key={editorKey}
                   problemId={actualProblemId}
                   language={language}
@@ -380,13 +730,133 @@ const ProblemPage = () => {
                 />
               </div>
 
-              {/* Test Cases */}
-              <div className="border-t border-[#1f1f1f]">
-                <TestCases
-                  testCases={problem.testCases || []}
-                  selectedTestCase={selectedTestCase}
-                  onSelectTestCase={setSelectedTestCase}
+              {/* 🎯 VERTICAL SPLITTER (FlexLayout style) */}
+              <div
+                className="relative z-40 flex items-center justify-center flexlayout__splitter flexlayout__splitter_vert cursor-ns-resize group"
+                style={{ 
+                  height: '1px',
+                  minHeight: '1px',
+                  flexDirection: 'row',
+                  backgroundColor: '#1f1f1f',
+                  pointerEvents: 'auto',
+                  transition: isVerticalDragging ? 'none' : 'background-color 0.2s'
+                }}
+                onMouseDown={handleVerticalDragStart}
+                onDoubleClick={handleVerticalDoubleClick}
+              >
+                {/* Extra drag area for easier grabbing */}
+                <div 
+                  className="absolute inset-0 flexlayout__splitter_extra cursor-ns-resize"
+                  style={{ 
+                    height: '8px',
+                    width: '100%',
+                    transform: 'translateY(-50%)'
+                  }}
                 />
+                
+                {/* Visual indicator line */}
+                <div 
+                  className={`absolute w-full transition-all duration-200 ${
+                    isVerticalDragging 
+                      ? 'h-[2px] bg-[#FF6D00] shadow-[0_0_8px_rgba(255,109,0,0.8)]'
+                      : 'h-[1px] bg-[#1f1f1f] group-hover:bg-[#FF6D00] group-hover:h-[2px]'
+                  }`}
+                  style={{ top: '50%', transform: 'translateY(-50%)' }}
+                />
+                
+                {/* Center grip indicator */}
+                <div 
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-150 ${
+                    isVerticalDragging
+                      ? 'w-10 h-1 bg-[#FF6D00] shadow-[0_0_12px_rgba(255,109,0,1)]'
+                      : 'w-8 h-[3px] bg-[#3a3a3a] group-hover:w-10 group-hover:bg-[#FF6D00] group-hover:shadow-[0_0_8px_rgba(255,109,0,0.8)]'
+                  }`}
+                />
+              </div>
+
+              {/* Test Cases Container - Takes remaining space */}
+              <div 
+                className="flex flex-col overflow-hidden flexlayout__tabset_container"
+                style={{ 
+                  flexGrow: 1,
+                  minHeight: `${MIN_TEST_HEIGHT}px`,
+                  maxHeight: '100%'
+                }}
+              >
+                {/* Tab Bar */}
+                
+
+                {/* Test Cases Content */}
+                <div className="flex-1 overflow-hidden flexlayout__tabset_content">
+                  {(() => {
+                    console.log('Test Cases render - showSkeleton:', showSkeleton, 'showTestResults:', showTestResults);
+                    if (showSkeleton) {
+                      return <TestCasesSkeleton rows={2} />;
+                    } else if (!showTestResults) {
+                      return (
+                        <div className="relative h-full overflow-hidden">
+                          {problem?.testCases ? (
+                            <TestCases
+                              testCases={problem.testCases || []}
+                              selectedTestCase={selectedTestCase}
+                              onSelectTestCase={setSelectedTestCase}
+                              onReset={() => setShowResetDialog(true)}
+                              onCopy={() => {
+                                const currentCode = editorContent[actualProblemId] || defaultCode;
+                                navigator.clipboard.writeText(currentCode);
+                              }}
+                              onFormat={() => {
+                                codeEditorRef.current?.formatCode();
+                              }}
+                              onFullscreen={() => setIsCodeEditorFullscreen(true)}
+                            />
+                          ) : (
+                            <div className="p-4 text-gray-400">No test cases available</div>
+                          )}
+                        </div>
+                      );
+                    } else {
+                      console.log('Passing test cases to TestCaseDisplay:', problem?.testCases);
+                      
+                      return (
+                        <div className="h-full overflow-hidden">
+                          <TestCaseDisplay
+                            testCases={problem?.testCases || []}
+                            testResults={testResults}
+                            onRunTests={async () => {
+                              try {
+                                const code = '';
+                                setShowSkeleton(true);
+                                setShowTestResults(false);
+                                
+                                const testPromise = runTests(actualProblemId, code, language);
+                                
+                                await Promise.all([
+                                  testPromise,
+                                  new Promise(resolve => setTimeout(resolve, 3000))
+                                ]);
+                                
+                                setShowSkeleton(false);
+                                setShowTestResults(true);
+                              } catch (error) {
+                                console.error('Failed to run tests:', error);
+                                setShowSkeleton(false);
+                              }
+                            }}
+                            onResetTestCases={() => {
+                              clearTestResults();
+                              setShowTestResults(false);
+                            }}
+                            problemParams={[
+                              { name: 'nums', label: 'Nums' },
+                              { name: 'target', label: 'Target' }
+                            ]}
+                          />
+                        </div>
+                      );
+                    }
+                  })()}
+                </div>
               </div>
             </div>
 
@@ -446,19 +916,8 @@ const ProblemPage = () => {
               ) : (
               <>
               {/* Expanded panel content (shown when width >= 100px) */}
-              {/* Header */}
-              <div className="flex items-center gap-3 px-5 py-3 border-b border-[#1f1f1f] sticky top-0 bg-[#0e0e0e] z-20">
-                <button
-                  onClick={() => navigate('/dsa')}
-                  className="text-gray-400 transition-colors hover:text-white"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <h1 className="text-lg font-semibold truncate">{problem.title}</h1>
-              </div>
-
               {/* Tabs */}
-              <div className="flex border-b border-[#1f1f1f] px-4 sticky top-[52px] bg-[#0e0e0e] z-10 overflow-x-hidden">
+              <div className="flex border-b border-[#1f1f1f] px-4 sticky top-0 bg-[#0e0e0e] z-10 overflow-x-hidden">
                 {[
                   { id: 'problem', icon: FileText, label: 'Problem' },
                   { id: 'editorial', icon: FileCode, label: 'Editorial' },
@@ -483,27 +942,121 @@ const ProblemPage = () => {
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {activeTab === 'problem' && (
-                  <ProblemStatement
-                    title={problem.title}
-                    difficulty={(problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)) as 'Easy' | 'Medium' | 'Hard'}
-                    coins={50}
-                    description={problem.description}
-                    examples={problem.examples || []}
-                    constraints={(problem.constraints || []).map(text => ({ text }))}
-                  />
+                {isSwitchingProblem ? (
+                  <div className="flex h-full min-h-0 p-6">
+                    <div className="w-full flex-1 min-h-0 rounded-xl bg-[#141414] p-6 border border-[#1f1f1f] flex flex-col gap-5">
+                      <div>
+                        <div className="w-2/3 h-6 rounded-md skeleton" />
+                        <div className="w-1/2 h-4 mt-3 rounded-md skeleton" />
+                      </div>
+                      <div className="w-full h-28 rounded-xl skeleton" />
+                      <div className="w-full h-28 rounded-xl skeleton" />
+                      <div className="flex-1 w-full rounded-xl skeleton" />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {activeTab === 'problem' && (
+                      <ProblemStatement
+                        title={problem.title}
+                        difficulty={(problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)) as 'Easy' | 'Medium' | 'Hard'}
+                        coins={50}
+                        description={problem.statement || problem.description}
+                        examples={problem.examples || []}
+                        constraints={(problem.constraints || []).map(text => ({ text }))}
+                        hints={problem.hints || []}
+                      />
+                    )}
+                    {activeTab === 'editorial' && (
+                      <EditorialView
+                        problem={problem}
+                        isStudyViewActive={isStudyViewActive}
+                        onStudyViewChange={setIsStudyViewActive}
+                      />
+                    )}
+                    {activeTab === 'submissions' && <Submissions latestSubmission={latestSubmission} isSubmitting={isSubmitting} />}
+                    {activeTab === 'discussion' && <Discussion problemId={problem._id} />}
+                    {activeTab === 'notes' && <NotesEditor />}
+                  </>
                 )}
-                {activeTab === 'editorial' && (
-                  <EditorialView
-                    problem={problem}
-                    isStudyViewActive={isStudyViewActive}
-                    onStudyViewChange={setIsStudyViewActive}
-                  />
-                )}
-                {activeTab === 'submissions' && <Submissions />}
-                {activeTab === 'discussion' && <Discussion />}
-                {activeTab === 'notes' && <NotesEditor />}
               </div>
+
+              {/* 🎯 Sticky Footer Bar - Shows for all tabs */}
+              <div className="sticky bottom-0 left-0 right-0 z-10 mt-auto border-t bg-[#0e0e0e] border-[#1f1f1f]">
+                <div className="flex flex-row items-center justify-between px-4 py-1">
+                  {/* Left side - Like, Dislike, Bug, Notes */}
+                  <div className="flex items-center gap-x-3">
+                    <button
+                      onClick={() => {
+                        setIsLiked(!isLiked);
+                        if (isDisliked) setIsDisliked(false);
+                      }}
+                      className="flex items-center text-gray-400 cursor-pointer gap-x-2 hover:text-gray-300"
+                      aria-pressed={isLiked}
+                      aria-label="Like problem"
+                    >
+                      <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-current text-[#FF6D00]' : ''}`} />
+                      <span className="text-sm">10</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsDisliked(!isDisliked);
+                        if (isLiked) setIsLiked(false);
+                      }}
+                      className="flex items-center text-gray-400 cursor-pointer hover:text-gray-300"
+                      aria-pressed={isDisliked}
+                      aria-label="Dislike problem"
+                    >
+                      <ThumbsDown className={`w-4 h-4 ${isDisliked ? 'fill-current text-[#FF6D00]' : ''}`} />
+                    </button>
+                    <div className="h-[12px] w-[1px] bg-[#1f1f1f]"></div>
+                    <button
+                      type="button"
+                      className="text-sm text-gray-400 transition-colors cursor-pointer hover:text-gray-300"
+                      aria-label="Report a bug for this problem"
+                    >
+                      <Bug className="w-4 h-4" />
+                    </button>
+                   
+                  </div>
+
+                  {/* Right side - Auto-play, Prev/Next problem */}
+                  <div className="flex items-center gap-x-3">
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={autoPlay}
+                          onChange={handleCheckboxChange}
+                          className="w-4 h-4 rounded border-2 border-gray-600 bg-gray-800 cursor-pointer accent-[#FF6D00] focus:ring-2 focus:ring-[#FF6D00] focus:ring-offset-0"
+                          style={{
+                            accentColor: '#FF6D00'
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div className="h-[12px] w-[1px] bg-[#1f1f1f]"></div>
+                    <div className="flex flex-row items-center justify-between text-gray-400 gap-x-2">
+                      <button
+                        type="button"
+                        aria-label="Previous problem"
+                        className="cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:text-gray-300"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="h-[12px] w-[1px] bg-[#1f1f1f]"></div>
+                      <button
+                        type="button"
+                        aria-label="Next problem"
+                        className="cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:text-gray-300"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               </>
               )}
             </div>
@@ -538,65 +1091,146 @@ const ProblemPage = () => {
             </div>
           </div>
         ) : (
-          /* Mobile View - No Split */
+          /* Mobile View - No Code Editor */
           <div className="flex flex-col flex-1 h-full overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-[#1f1f1f] sticky top-0 bg-[#0e0e0e] z-20">
-              <button
-                onClick={() => navigate('/dsa')}
-                className="text-gray-400 transition-colors hover:text-white"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <h1 className="text-lg font-semibold truncate">{problem.title}</h1>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-[#1f1f1f] px-4 sticky top-[52px] bg-[#0e0e0e] z-10 overflow-x-auto no-scrollbar">
+            {/* Mobile Tabs - Horizontal Scrollable */}
+            <div className="flex border-b border-[#1f1f1f] px-0 sticky top-0 bg-[#0e0e0e] z-20 overflow-x-auto scrollbar-hide">
               {[
                 { id: 'problem', icon: FileText, label: 'Problem' },
-                { id: 'editorial', icon: FileCode, label: 'Editorial' },
-                { id: 'submissions', icon: Play, label: 'Submissions' },
-                { id: 'discussion', icon: MessageSquare, label: 'Discussion' },
-                { id: 'notes', icon: Bookmark, label: 'Notes' }
+                { id: 'editorial', icon: BookOpen, label: 'Editorial' },
+                { id: 'submissions', icon: Clock, label: 'Submissions' },
+                { id: 'discussion', icon: Users, label: 'Discussion' },
+                { id: 'notes', icon: Sparkles, label: 'Ai' }
               ].map(tab => (
                 <button
                   key={tab.id}
-                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'text-white border-b-2 border-[#FF6D00]'
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
-                  onClick={() => navigate(`/dsa/${topicId}/${problemId}?tab=${tab.id}`)}
+                  onClick={() => navigate(`/dsa/${topicId}/${subtopicId || actualProblemId}/${actualProblemId}?tab=${tab.id}`)}
                 >
-                  <tab.icon size={16} />
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  <tab.icon size={16} className="flex-shrink-0" />
                 </button>
               ))}
             </div>
 
-            {/* Content */}
-            <div className="flex-1 px-6 py-4 overflow-y-auto">
-              {activeTab === 'problem' && (
-                <ProblemStatement
-                  title={problem.title}
-                  difficulty={(problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)) as 'Easy' | 'Medium' | 'Hard'}
-                  coins={50}
-                  description={problem.description}
-                  examples={problem.examples || []}
-                  constraints={(problem.constraints || []).map(text => ({ text }))}
-                />
+            {/* Mobile Content Area */}
+            <div className="flex-1 overflow-y-auto bg-[#0e0e0e] pr-10">
+              {isSwitchingProblem ? (
+                <div className="flex h-full px-4 py-4">
+                  <div className="w-full rounded-lg bg-[#141414] p-4 sm:p-5 border border-[#1f1f1f] flex flex-col gap-3 sm:gap-4">
+                    <div>
+                      <div className="w-2/3 h-4 rounded-md sm:h-5 skeleton" />
+                      <div className="w-1/2 h-3 mt-2 rounded-md sm:h-4 skeleton" />
+                    </div>
+                    <div className="w-full h-20 rounded-lg sm:h-24 skeleton" />
+                    <div className="w-full h-20 rounded-lg sm:h-24 skeleton" />
+                    <div className="flex-1 w-full min-h-[100px] rounded-lg skeleton" />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {activeTab === 'problem' && (
+                    <ProblemStatement
+                      title={problem.title}
+                      difficulty={(problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)) as 'Easy' | 'Medium' | 'Hard'}
+                      coins={50}
+                      description={problem.statement || problem.description}
+                      examples={problem.examples || []}
+                      constraints={(problem.constraints || []).map(text => ({ text }))}
+                      hints={problem.hints || []}
+                    />
+                  )}
+                  {activeTab === 'editorial' && (
+                    <EditorialView
+                      problem={problem}
+                      isStudyViewActive={isStudyViewActive}
+                      onStudyViewChange={setIsStudyViewActive}
+                    />
+                  )}
+                  {activeTab === 'submissions' && <Submissions latestSubmission={latestSubmission} isSubmitting={isSubmitting} />}
+                  {activeTab === 'discussion' && <Discussion problemId={problem._id} />}
+                  {activeTab === 'notes' && <NotesEditor />}
+                </>
               )}
-              {activeTab === 'editorial' && (
-                <EditorialView
-                  problem={problem}
-                  isStudyViewActive={isStudyViewActive}
-                  onStudyViewChange={setIsStudyViewActive}
-                />
-              )}
-              {activeTab === 'submissions' && <Submissions />}
-              {activeTab === 'discussion' && <Discussion />}
-              {activeTab === 'notes' && <NotesEditor />}
+            </div>
+
+            {/* Mobile Footer - Like/Dislike/Navigation */}
+            <div className="sticky bottom-0 left-0 right-0 w-full border-t bg-[#0e0e0e] border-[#1f1f1f] z-10">
+              <div className="flex flex-row items-center justify-between px-2 py-2 ml-2 sm:px-4 sm:py-1">
+                {/* Left side - Like, Dislike, Bug */}
+                <div className="flex items-center flex-shrink-0 gap-x-2 sm:gap-x-3">
+                  <button
+                    onClick={() => {
+                      setIsLiked(!isLiked);
+                      if (isDisliked) setIsDisliked(false);
+                    }}
+                    className="flex items-center text-gray-400 cursor-pointer gap-x-1.5 sm:gap-x-2 hover:text-gray-300"
+                    aria-pressed={isLiked}
+                    aria-label="Like problem"
+                  >
+                    <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-current text-[#FF6D00]' : ''}`} />
+                    <span className="text-xs sm:text-sm">10</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsDisliked(!isDisliked);
+                      if (isLiked) setIsLiked(false);
+                    }}
+                    className="flex items-center text-gray-400 cursor-pointer hover:text-gray-300"
+                    aria-pressed={isDisliked}
+                    aria-label="Dislike problem"
+                  >
+                    <ThumbsDown className={`w-4 h-4 ${isDisliked ? 'fill-current text-[#FF6D00]' : ''}`} />
+                  </button>
+                  <div className="h-[12px] w-[1px] bg-[#1f1f1f]"></div>
+                  <button
+                    type="button"
+                    className="text-sm text-gray-400 transition-colors cursor-pointer hover:text-gray-300"
+                    aria-label="Report a bug for this problem"
+                  >
+                    <Bug className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Right side - Auto-play, Prev/Next problem */}
+                <div className="flex items-center gap-x-1.5 sm:gap-x-3 pr-12 flex-shrink-0">
+                  <div className="flex items-center">
+                    <label className="flex items-center text-xs text-gray-400 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={autoPlay}
+                        onChange={handleCheckboxChange}
+                        className="w-4 h-4 rounded border-2 border-gray-600 bg-gray-800 cursor-pointer accent-[#FF6D00] focus:ring-2 focus:ring-[#FF6D00] focus:ring-offset-0"
+                        style={{
+                          accentColor: '#FF6D00'
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="h-[12px] w-[1px] bg-[#1f1f1f]"></div>
+                  <div className="flex flex-row items-center gap-x-1">
+                    <button
+                      type="button"
+                      aria-label="Previous problem"
+                      className="flex items-center justify-center text-gray-400 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:text-gray-300"
+                    >
+                      <ChevronLeft className="w-4 h-4 sm:w-3.5 sm:h-3.5" strokeWidth={2} />
+                    </button>
+                    <div className="h-[12px] w-[1px] bg-[#1f1f1f]"></div>
+                    <button
+                      type="button"
+                      aria-label="Next problem"
+                      className="flex items-center justify-center text-gray-400 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:text-gray-300"
+                    >
+                      <ChevronRight className="w-4 h-4 sm:w-3.5 sm:h-3.5" strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -610,7 +1244,200 @@ const ProblemPage = () => {
           <Toast message={toastMsg} variant={toastVariant} onClose={() => setToastMsg(null)} />
         </div>
       )}
+
+      {/* Reset confirmation dialog */}
+      <AlertDialog
+        open={showResetDialog}
+        onOpenChange={setShowResetDialog}
+        title="Reset code"
+        description="Are you sure you want to reset your code to the initial template for this language? This action cannot be undone."
+        onConfirm={handleResetCode}
+        confirmText="Reset"
+        cancelText="Cancel"
+      />
     </div>
+
+    {/* Fullscreen Code Editor Overlay */}
+    {isCodeEditorFullscreen && (
+      <div className="fixed inset-0 z-[9999] bg-[#0e0e0e] flex flex-col">
+        {/* Fullscreen Toolbar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#1f1f1f] bg-[#0b0b0b]">
+          <div className="flex items-center gap-3">
+            <select
+              value={language}
+              onChange={e => setLanguage(e.target.value)}
+              className="px-3 py-1 text-xs bg-[#1f1f1f] border border-[#2a2a2a] rounded text-gray-300"
+            >
+              <option value="cpp">C++</option>
+              <option value="java">Java</option>
+              <option value="python">Python</option>
+              <option value="javascript">JavaScript</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* 4 Control Buttons */}
+            <div className="flex items-center gap-1.5 border-r border-[#2a2a2a] pr-3">
+              <button 
+                onClick={() => {
+                  setEditorKey(prev => prev + 1);
+                }}
+                className="p-1.5 text-gray-400 hover:text-gray-300 hover:bg-[#1f1f1f] rounded transition-colors" 
+                title="Reset Code"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                  <path d="M21 3v5h-5"></path>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                  <path d="M8 16H3v5"></path>
+                </svg>
+              </button>
+              
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText('Code copied!');
+                }}
+                className="p-1.5 text-gray-400 hover:text-gray-300 hover:bg-[#1f1f1f] rounded transition-colors" 
+                title="Copy Code"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                </svg>
+              </button>
+              
+              <button 
+                onClick={() => {
+                  if (codeEditorRef.current) {
+                    codeEditorRef.current.formatCode();
+                  }
+                }}
+                className="p-1.5 text-gray-400 hover:text-gray-300 hover:bg-[#1f1f1f] rounded transition-colors" 
+                title="Format Code"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="16" height="6" x="2" y="2" rx="2"></rect>
+                  <path d="M10 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+                  <rect width="4" height="6" x="8" y="16" rx="1"></rect>
+                </svg>
+              </button>
+              
+              <button 
+                onClick={() => setIsCodeEditorFullscreen(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-300 hover:bg-[#1f1f1f] rounded transition-colors" 
+                title="Exit Fullscreen"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3"></path>
+                  <path d="M21 8h-3a2 2 0 0 1-2-2V3"></path>
+                  <path d="M3 16h3a2 2 0 0 1 2 2v3"></path>
+                  <path d="M16 21v-3a2 2 0 0 1 2-2h3"></path>
+                </svg>
+              </button>
+            </div>
+            
+            {/* Font Size Dropdown */}
+            <div className="relative">
+              <button 
+                type="button"
+                onClick={() => setShowFontSizeDropdown(!showFontSizeDropdown)}
+                className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-400 hover:text-gray-300 bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#2a2a2a] rounded transition-colors h-8"
+              >
+                <span>{editorConfig.fontSize}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </button>
+              
+              {showFontSizeDropdown && (
+                <div className="absolute top-full mt-1 right-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded shadow-lg z-50 py-1 min-w-[60px]">
+                  {[12, 13, 14, 15, 16, 17, 18, 19, 20].map(size => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => {
+                        updateEditorConfig({ fontSize: size });
+                        setShowFontSizeDropdown(false);
+                      }}
+                      className={`w-full px-3 py-1.5 text-xs text-left hover:bg-[#2a2a2a] transition-colors ${
+                        editorConfig.fontSize === size ? 'text-orange-400 bg-[#2a2a2a]' : 'text-gray-300'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Run Button */}
+            <button
+              className="h-8 px-4 rounded-md text-sm font-medium bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white flex items-center gap-1"
+              onClick={async () => {
+                try {
+                  console.log('Run button clicked');
+                  const code = '';
+                  setShowSkeleton(true);
+                  setShowTestResults(false);
+                  const testPromise = runTests(actualProblemId, code, language);
+                  await Promise.all([
+                    testPromise,
+                    new Promise(resolve => setTimeout(resolve, 3000))
+                  ]);
+                  setShowSkeleton(false);
+                  setShowTestResults(true);
+                } catch (error) {
+                  console.error('Error running tests:', error);
+                  setShowSkeleton(false);
+                  setToastVariant('error');
+                  setToastMsg('Failed to run tests');
+                  setShowTestResults(false);
+                }
+              }}
+            >
+              <Play size={14} />
+              Run
+            </button>
+            
+            {/* Submit Button */}
+            <button
+              className="h-8 px-5 rounded-md text-sm font-medium text-white bg-[#FF6D00] hover:bg-[#ff7a1a]"
+              onClick={async () => {
+                try {
+                  const result = await submissionService.runLocally(
+                    problem?.testCases || [],
+                    '',
+                    language,
+                    actualProblemId
+                  );
+                  if (result.status === 'accepted') {
+                    await updateProgress('solved', actualProblemId);
+                  }
+                } catch {
+                  // Error handling
+                }
+              }}
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+
+        {/* Code Editor */}
+        <div className="relative flex-1 overflow-hidden">
+          <CodeEditor
+            ref={codeEditorRef}
+            key={editorKey}
+            problemId={actualProblemId}
+            language={language}
+            defaultCode={defaultCode}
+            onChange={value => {
+              if (value !== undefined) updateEditorContent(actualProblemId, value);
+            }}
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
@@ -622,62 +1449,40 @@ type EditorialViewProps = {
 };
 
 const EditorialView = ({ problem, isStudyViewActive, onStudyViewChange }: EditorialViewProps) => {
-  // Content from your EditorialPage
-  const intuitionContent = `
-The naive way is to think of a data structure that does not store duplicate elements — HashSet.
-Keep track of unique elements in the hashset, and at last copy all the elements from the HashSet
-back to the original array.
-  `;
+  // Debug: Log entire problem object
+  console.log('=== EditorialView Debug ===');
+  console.log('Full problem object:', problem);
+  console.log('Has editorial?', !!problem.editorial);
+  console.log('Editorial value:', problem.editorial);
+  console.log('Editorial sections:', problem.editorial?.sections);
+  console.log('Starter code:', problem.starterCode);
+  console.log('========================');
 
-  const approachContent = `
-• Traverse through the array, similar to the idea of scanning each book serially.
-• Check if the current element of array is equal to the target element.
-• If so, return the index and stop scanning further.
-• In case the target value is not found, return -1 marking that the target element is missing.
-  `;
+  // If no editorial, show message
+  if (!problem.editorial) {
+    return (
+      <div className="flex items-center justify-center h-full p-8 text-center">
+        <div>
+          <h2 className="mb-2 text-xl font-semibold text-gray-400">Editorial Not Available</h2>
+          <p className="text-gray-500">This problem doesn't have an editorial yet.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { editorial } = problem;
 
   return (
     <Editorial
       showStudyView={isStudyViewActive}
       onStudyViewChange={onStudyViewChange}
-      // Main header content
       title={problem.title}
-      subtitle="Brute force approach"
-      videoThumbnail="/images/session-dp.jpg"
-      videoUrl="https://example.com/video"
-
-      // Editorial explanation sections
-      sections={[
-        {
-          title: 'Intuition',
-          content: intuitionContent,
-        },
-        {
-          title: 'Approach',
-          content: approachContent,
-        },
-      ]}
-
-      // Dry run images (optional)
-      dryRunImages={[
-        {
-          id: '1',
-          src: '/images/session-dp.jpg',
-          alt: 'Dry run step 1',
-        },
-        {
-          id: '2',
-          src: '/images/session-graph.jpg',
-          alt: 'Dry run step 2',
-        },
-      ]}
-
-      // Solutions in different languages (using problem's starter code from API)
-      solutions={problem.starterCode || {}}
-
-      // Complexity analysis
-      timeComplexity="O(N), in worst case the entire array will be traversed, taking time N where N is the size of the array."
-      spaceComplexity="O(1), no extra space is used apart from the input array."
+      videoUrl={editorial.videoUrl}
+      sections={editorial.sections || []}
+      dryRunImages={editorial.dryRunImages || []}
+      solutions={editorial.solutions || {}}
+      timeComplexity={editorial.timeComplexity || "O(n)"}
+      spaceComplexity={editorial.spaceComplexity || "O(1)"}
     />
   );
 };

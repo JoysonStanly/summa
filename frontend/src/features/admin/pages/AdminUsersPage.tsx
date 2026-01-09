@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useToast } from '@/shared/hooks/ToastContext';
 import { motion } from 'framer-motion';
+import { userService, type User, type UserRole, type UserStatus } from '@/services/api/userService';
 import { 
   Search, 
   Filter, 
@@ -11,119 +13,64 @@ import {
   UserCheck,
   UserX,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  ArrowLeft
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Sidebar } from "@/shared/components/layout";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'student' | 'instructor' | 'admin';
-  status: 'active' | 'suspended' | 'pending';
-  joinedDate: string;
-  lastActive: string;
-  problemsSolved?: number;
-  streak?: number;
-  coins?: number;
-}
-
 const AdminUsersPage = () => {
+  const { success: toastSuccess, error: toastError } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<UserRole | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<UserStatus | 'all'>('all');
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
-  const mockUsers: User[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      role: 'student',
-      status: 'active',
-      joinedDate: '2024-01-15',
-      lastActive: '2024-12-24',
-      problemsSolved: 45,
-      streak: 12,
-      coins: 4500
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      role: 'instructor',
-      status: 'active',
-      joinedDate: '2023-11-20',
-      lastActive: '2024-12-25',
-      problemsSolved: 120,
-      streak: 25,
-      coins: 12000
-    },
-    {
-      id: '3',
-      name: 'Bob Johnson',
-      email: 'bob.j@example.com',
-      role: 'student',
-      status: 'suspended',
-      joinedDate: '2024-06-10',
-      lastActive: '2024-12-10',
-      problemsSolved: 8,
-      streak: 0,
-      coins: 800
-    },
-    {
-      id: '4',
-      name: 'Alice Williams',
-      email: 'alice.w@example.com',
-      role: 'admin',
-      status: 'active',
-      joinedDate: '2023-01-05',
-      lastActive: '2024-12-25',
-      problemsSolved: 200,
-      streak: 100,
-      coins: 25000
-    },
-    {
-      id: '5',
-      name: 'Charlie Brown',
-      email: 'charlie.b@example.com',
-      role: 'student',
-      status: 'pending',
-      joinedDate: '2024-12-20',
-      lastActive: '2024-12-23',
-      problemsSolved: 2,
-      streak: 1,
-      coins: 200
-    },
-    {
-      id: '6',
-      name: 'Diana Prince',
-      email: 'diana.p@example.com',
-      role: 'instructor',
-      status: 'active',
-      joinedDate: '2024-03-15',
-      lastActive: '2024-12-24',
-      problemsSolved: 85,
-      streak: 30,
-      coins: 8500
+  // Fetch users from API
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await userService.getAllUsers({
+        role: filterRole !== 'all' ? filterRole : undefined,
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+      });
+
+      setUsers(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load users';
+      setError(message);
+      toastError(message);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  }, [filterRole, filterStatus, toastError]);
 
-  const filteredUsers = mockUsers.filter((user) => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
-    const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-  const stats = {
-    total: mockUsers.length,
-    active: mockUsers.filter(u => u.status === 'active').length,
-    suspended: mockUsers.filter(u => u.status === 'suspended').length,
-    pending: mockUsers.filter(u => u.status === 'pending').length,
-  };
+  // Filter users based on search
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch;
+    });
+  }, [users, searchQuery]);
+
+  // Calculate stats
+  const stats = useMemo(() => ({
+    total: users.length,
+    active: users.filter(u => u.status === 'active').length,
+    suspended: users.filter(u => u.status === 'suspended').length,
+    pending: users.filter(u => u.status === 'pending').length,
+  }), [users]);
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -151,9 +98,21 @@ const AdminUsersPage = () => {
     }
   };
 
-  const handleStatusChange = (userId: string, newStatus: string) => {
-    console.log(`Changing user ${userId} status to ${newStatus}`);
-    // Add API call here
+  const handleStatusChange = async (userId: string, newStatus: UserStatus) => {
+    setUpdatingUserId(userId);
+    setError(null);
+
+    try {
+      const updatedUser = await userService.updateUser(userId, { status: newStatus });
+      setUsers((prev) => prev.map((user) => (user._id === userId ? updatedUser : user)));
+      toastSuccess(`User status changed to ${newStatus}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update user status';
+      setError(message);
+      toastError(message);
+    } finally {
+      setUpdatingUserId(null);
+    }
   };
 
   return (
@@ -161,19 +120,31 @@ const AdminUsersPage = () => {
       <Sidebar />
       
       <div className="flex-1 ml-20">
-        <div className="max-w-7xl mx-auto p-8">
+        <div className="p-8 mx-auto max-w-7xl">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl font-bold text-white mb-2">User Management</h1>
-            <p className="text-gray-400">Manage platform users, roles, and permissions</p>
+            <div className="flex items-center justify-between mb-4">
+              <Link to="/admin" className="flex items-center gap-2 px-4 py-2 transition-colors rounded-lg hover:bg-zinc-800" title="Go back">
+                <ArrowLeft size={20} />
+              </Link>
+              <div className="flex-1 text-center">
+                <h1 className="mb-2 text-3xl font-bold text-white">User Management</h1>
+              </div>
+              <div className="w-[84px]"></div>
+            </div>
+            {error && (
+              <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                {error}
+              </div>
+            )}
           </motion.div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -181,7 +152,7 @@ const AdminUsersPage = () => {
               className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-sm">Total Users</span>
+                <span className="text-sm text-gray-400">Total Users</span>
                 <UserCheck className="w-5 h-5 text-blue-400" />
               </div>
               <p className="text-3xl font-bold text-white">{stats.total}</p>
@@ -194,7 +165,7 @@ const AdminUsersPage = () => {
               className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-sm">Active</span>
+                <span className="text-sm text-gray-400">Active</span>
                 <CheckCircle className="w-5 h-5 text-green-400" />
               </div>
               <p className="text-3xl font-bold text-white">{stats.active}</p>
@@ -207,7 +178,7 @@ const AdminUsersPage = () => {
               className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-sm">Suspended</span>
+                <span className="text-sm text-gray-400">Suspended</span>
                 <Ban className="w-5 h-5 text-red-400" />
               </div>
               <p className="text-3xl font-bold text-white">{stats.suspended}</p>
@@ -220,7 +191,7 @@ const AdminUsersPage = () => {
               className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-sm">Pending</span>
+                <span className="text-sm text-gray-400">Pending</span>
                 <UserX className="w-5 h-5 text-yellow-400" />
               </div>
               <p className="text-3xl font-bold text-white">{stats.pending}</p>
@@ -234,10 +205,10 @@ const AdminUsersPage = () => {
             transition={{ delay: 0.5 }}
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6"
           >
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col gap-4 md:flex-row">
               {/* Search */}
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <div className="relative flex-1">
+                <Search className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
                 <input
                   type="text"
                   placeholder="Search by name or email..."
@@ -249,7 +220,7 @@ const AdminUsersPage = () => {
 
               {/* Role Filter */}
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Filter className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
                 <select
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value)}
@@ -264,7 +235,7 @@ const AdminUsersPage = () => {
 
               {/* Status Filter */}
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Filter className="absolute w-5 h-5 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
@@ -287,107 +258,110 @@ const AdminUsersPage = () => {
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden"
           >
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed">
+                <colgroup>
+                  <col style={{ width: '35%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '20%' }} />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-[#2a2a2a]">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">User</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">Role</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">Stats</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">Joined</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">Last Active</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">Actions</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-left text-gray-400 uppercase tracking-wider">User</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-left text-gray-400 uppercase tracking-wider">Role</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-left text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-left text-gray-400 uppercase tracking-wider">Joined</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-left text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user, index) => (
-                    <motion.tr
-                      key={user.id}
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                        Loading users...
+                      </td>
+                    </tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                        No users found matching your filters
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((user, index) => (
+                      <motion.tr
+                        key={user._id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 * index }}
+                      transition={{ delay: 0.05 * Math.min(index, 10) }}
                       className="border-b border-[#2a2a2a] hover:bg-[#0f0f0f] transition-colors"
                     >
                       {/* User Info */}
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-white font-medium">{user.name}</p>
-                          <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
-                            <Mail className="w-3 h-3" />
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-white truncate">{user.name}</span>
+                          <span className="flex items-center gap-1 text-xs text-gray-400 truncate">
+                            <Mail className="w-3 h-3 flex-shrink-0" />
                             {user.email}
-                          </p>
+                          </span>
                         </div>
                       </td>
 
                       {/* Role */}
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(user.role)}`}>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(user.role)}`}>
                           <Shield className="w-3 h-3" />
                           {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                         </span>
                       </td>
 
                       {/* Status */}
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(user.status)}`}>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(user.status || 'active')}`}>
                           {user.status === 'active' && <CheckCircle className="w-3 h-3" />}
                           {user.status === 'suspended' && <Ban className="w-3 h-3" />}
                           {user.status === 'pending' && <Calendar className="w-3 h-3" />}
-                          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                          {(user.status || 'active').charAt(0).toUpperCase() + (user.status || 'active').slice(1)}
                         </span>
                       </td>
 
-                      {/* Stats */}
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1 text-sm">
-                          <span className="text-gray-400">
-                            <TrendingUp className="w-3 h-3 inline mr-1" />
-                            {user.problemsSolved} solved
-                          </span>
-                          <span className="text-orange-400">🔥 {user.streak} day streak</span>
-                          <span className="text-yellow-400">🪙 {user.coins} coins</span>
-                        </div>
-                      </td>
-
                       {/* Joined Date */}
-                      <td className="px-6 py-4">
-                        <span className="text-gray-400 text-sm">{user.joinedDate}</span>
-                      </td>
-
-                      {/* Last Active */}
-                      <td className="px-6 py-4">
-                        <span className="text-gray-400 text-sm">{user.lastActive}</span>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-gray-400">
+                          {new Date(user.createdAt).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })}
+                        </span>
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <select
-                            value={user.status}
-                            onChange={(e) => handleStatusChange(user.id, e.target.value)}
-                            className="px-3 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm focus:outline-none focus:border-orange-500 cursor-pointer"
+                            value={user.status || 'active'}
+                            onChange={(e) => handleStatusChange(user._id, e.target.value as UserStatus)}
+                            disabled={updatingUserId === user._id}
+                            className="px-2.5 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded-md text-white text-xs focus:outline-none focus:border-orange-500 cursor-pointer disabled:opacity-60"
                           >
                             <option value="active">Active</option>
                             <option value="suspended">Suspend</option>
                             <option value="pending">Pending</option>
                           </select>
                           
-                          <button className="p-2 text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded-lg transition-colors">
+                          <button className="p-1.5 text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded-md transition-colors">
                             <MoreVertical className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
                     </motion.tr>
-                  ))}
+                  ))
+                  )}
                 </tbody>
               </table>
             </div>
-
-            {filteredUsers.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-400">No users found matching your filters</p>
-              </div>
-            )}
           </motion.div>
         </div>
       </div>

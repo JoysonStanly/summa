@@ -17,10 +17,14 @@ interface UserState extends LocalUserState {
   isLoadingStats: boolean;
   error: string | null;
   
+  // Streak refresh trigger
+  streakRefreshTrigger: number;
+  
   // Actions
   fetchProgress: () => Promise<void>;
   fetchStats: () => Promise<void>;
   updateProgress: (action: 'solved' | 'attempted' | 'streak', problemId?: string) => Promise<void>;
+  refreshStreak: () => void; // Trigger calendar refresh
   
   // Local actions (notes only)
   saveNote: (topicId: string, content: string) => void;
@@ -36,6 +40,7 @@ const initialState = {
   isLoadingProgress: false,
   isLoadingStats: false,
   error: null,
+  streakRefreshTrigger: 0,
 };
 
 export const useUserStore = create<UserState>()(
@@ -51,8 +56,9 @@ export const useUserStore = create<UserState>()(
           const progress = await progressService.getProgress();
           set({ progress, isLoadingProgress: false });
         } catch (error) {
+          // Silently fail - don't spam errors when backend is down
+          console.warn('Progress API unavailable, using local data');
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to fetch progress',
             isLoadingProgress: false 
           });
         }
@@ -65,8 +71,9 @@ export const useUserStore = create<UserState>()(
           const stats = await progressService.getStats();
           set({ stats, isLoadingStats: false });
         } catch (error) {
+          // Silently fail - don't spam errors when backend is down
+          console.warn('Stats API unavailable');
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to fetch stats',
             isLoadingStats: false 
           });
         }
@@ -75,17 +82,41 @@ export const useUserStore = create<UserState>()(
       // Update progress on backend
       updateProgress: async (action: 'solved' | 'attempted' | 'streak', problemId?: string) => {
         set({ error: null });
+        console.log('[userStore] updateProgress called:', { action, problemId });
         try {
           const progress = await progressService.updateProgress({
             action,
             problemId,
           });
+          console.log('[userStore] Progress updated:', progress);
           set({ progress });
+          
+          // Trigger calendar refresh if streak was updated
+          if (action === 'streak' || action === 'solved') {
+            console.log('[userStore] Incrementing streakRefreshTrigger');
+            set((state) => {
+              const newTrigger = state.streakRefreshTrigger + 1;
+              console.log('[userStore] streakRefreshTrigger:', state.streakRefreshTrigger, '→', newTrigger);
+              return { streakRefreshTrigger: newTrigger };
+            });
+          }
         } catch (error) {
+          console.error('[userStore] Failed to update progress:', error);
           set({ 
             error: error instanceof Error ? error.message : 'Failed to update progress'
           });
+          throw error; // Re-throw so the caller knows it failed
         }
+      },
+      
+      // Manually trigger streak refresh
+      refreshStreak: () => {
+        console.log('[userStore] refreshStreak called manually');
+        set((state) => {
+          const newTrigger = state.streakRefreshTrigger + 1;
+          console.log('[userStore] Manual refresh - streakRefreshTrigger:', state.streakRefreshTrigger, '→', newTrigger);
+          return { streakRefreshTrigger: newTrigger };
+        });
       },
       
       // Save note locally (notes are not synced with backend)

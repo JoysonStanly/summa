@@ -2,6 +2,24 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+export interface ISocialLinks {
+  linkedin?: string;
+  github?: string;
+  twitter?: string;
+  website?: string;
+  resume?: string;
+}
+
+export interface IProject {
+  name: string;
+  description?: string;
+  url?: string;
+  credentials?: {
+    username: string;
+    password: string;
+  };
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -9,6 +27,14 @@ export interface IUser extends Document {
   role: 'student' | 'instructor' | 'admin';
   avatar?: string;
   bio?: string;
+  mobile?: string;
+  countryCode?: string;
+  location?: string;
+  university?: string;
+  educationYear?: string;
+  skills: string[];
+  socialLinks: ISocialLinks;
+  projects: IProject[];
   coins: number;
   completedProblems: mongoose.Types.ObjectId[];
   streakData: {
@@ -16,6 +42,10 @@ export interface IUser extends Document {
     maxStreak: number;
     lastActiveDate: Date;
   };
+  dailyCheckedProblems: Array<{
+    problemId: mongoose.Types.ObjectId;
+    checkedDate: Date;
+  }>;
   preferences: {
     theme: 'dark' | 'light';
     notifications: boolean;
@@ -25,6 +55,16 @@ export interface IUser extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateAuthToken(): string;
 }
+
+const ProjectSchema = new Schema({
+  name: { type: String, required: true },
+  description: { type: String },
+  url: { type: String },
+  credentials: {
+    username: { type: String },
+    password: { type: String },
+  },
+}, { _id: false });
 
 const UserSchema: Schema = new Schema(
   {
@@ -66,6 +106,40 @@ const UserSchema: Schema = new Schema(
       maxlength: [500, 'Bio cannot exceed 500 characters'],
       default: '',
     },
+    mobile: {
+      type: String,
+      default: '',
+    },
+    countryCode: {
+      type: String,
+      default: '+91',
+    },
+    location: {
+      type: String,
+      maxlength: [100, 'Location cannot exceed 100 characters'],
+      default: '',
+    },
+    university: {
+      type: String,
+      maxlength: [200, 'University name cannot exceed 200 characters'],
+      default: '',
+    },
+    educationYear: {
+      type: String,
+      default: '',
+    },
+    skills: [{
+      type: String,
+      trim: true,
+    }],
+    socialLinks: {
+      linkedin: { type: String, default: '' },
+      github: { type: String, default: '' },
+      twitter: { type: String, default: '' },
+      website: { type: String, default: '' },
+      resume: { type: String, default: '' },
+    },
+    projects: [ProjectSchema],
     coins: {
       type: Number,
       default: 0,
@@ -93,6 +167,18 @@ const UserSchema: Schema = new Schema(
         default: null,
       },
     },
+    dailyCheckedProblems: [
+      {
+        problemId: {
+          type: Schema.Types.ObjectId,
+          ref: 'Problem',
+        },
+        checkedDate: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     preferences: {
       theme: {
         type: String,
@@ -109,9 +195,6 @@ const UserSchema: Schema = new Schema(
     timestamps: true,
   }
 );
-
-// Index for faster email lookups
-UserSchema.index({ email: 1 });
 
 // Hash password before saving
 UserSchema.pre<IUser>('save', async function (next) {

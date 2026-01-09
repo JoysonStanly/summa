@@ -12,12 +12,14 @@ export interface Topic {
   videoUrl?: string;
   duration?: string;
   slides: Slide[];
+  problems?: { id: string; name: string; isCompleted?: boolean }[];
 }
 
 export interface Module {
   id: string;
   title: string;
   topics: Topic[];
+  problems?: { id: string; name: string; isCompleted?: boolean }[];
 }
 
 export interface Subject {
@@ -28,50 +30,17 @@ export interface Subject {
 
 export const dbmsData: Subject = {
   id: 'dbms',
-  title: 'Database Management System',
+  title: 'DBMS',
   modules: [
     {
       id: 'introduction-to-dbms',
       title: 'Introduction to DBMS',
+      problems: [
+        { id: 'what-is-dbms', name: 'What is DBMS?', isCompleted: false },
+        { id: 'relational-model', name: 'Relational Model', isCompleted: false },
+        { id: 'er-diagrams', name: 'ER Diagrams', isCompleted: false }
+      ],
       topics: [
-        {
-          id: 'what-is-dbms',
-          title: 'What is DBMS?',
-          status: 'current',
-          videoUrl: '/videos/dbms-intro.mp4',
-          duration: '16:30',
-          slides: [
-            {
-              id: 'slide-1',
-              title: 'Database Management System',
-              content: 'A DBMS is software that manages databases, providing data storage, retrieval, and manipulation capabilities.',
-            },
-            {
-              id: 'slide-2',
-              title: 'Advantages of DBMS',
-              content: 'Data independence, data integrity, security, backup and recovery',
-            },
-            {
-              id: 'slide-3',
-              title: 'Types of Databases',
-              content: 'Relational, NoSQL, Hierarchical, Network databases',
-            }
-          ]
-        },
-        {
-          id: 'relational-model',
-          title: 'Relational Model',
-          status: 'not-started',
-          duration: '20:15',
-          slides: []
-        },
-        {
-          id: 'er-diagrams',
-          title: 'ER Diagrams',
-          status: 'not-started',
-          duration: '22:30',
-          slides: []
-        }
       ]
     },
     {

@@ -6,6 +6,7 @@ import Progress from '../models/Progress';
 import User from '../models/User';
 import judge0Service from '../services/judge0Service';
 import { updateUserStreak, awardCoins } from '../utils/streakHelper';
+import { loadProblemJSON } from '../utils/jsonLoader';
 
 /**
  * @desc    Submit code solution
@@ -25,7 +26,7 @@ export const submitSolution = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    // Get problem with test cases
+    // Get problem metadata
     const problem = await Problem.findById(problemId);
 
     if (!problem) {
@@ -36,13 +37,27 @@ export const submitSolution = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
+    // Load test cases from JSON file
+    let jsonContent;
+    try {
+      jsonContent = loadProblemJSON(problem.contentPath);
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Problem content not available',
+      });
+      return;
+    }
+
+    const testCases = jsonContent.testCases;
+
     // Run code against all test cases
     const testResults = [];
     let allPassed = true;
     let totalTime = 0;
     let totalMemory = 0;
 
-    for (const testCase of problem.testCases) {
+    for (const testCase of testCases) {
       const input = testCase.input.join('\n');
       const expectedOutput = testCase.output;
 
@@ -55,9 +70,9 @@ export const submitSolution = async (req: AuthRequest, res: Response): Promise<v
 
       testResults.push({
         passed: result.passed,
-        input: testCase.hidden ? undefined : input,
-        expected: testCase.hidden ? undefined : expectedOutput,
-        actual: testCase.hidden ? undefined : result.output,
+        input: testCase.isHidden ? undefined : input,
+        expected: testCase.isHidden ? undefined : expectedOutput,
+        actual: testCase.isHidden ? undefined : result.output,
         error: result.error,
         executionTime: result.time,
       });
@@ -88,6 +103,7 @@ export const submitSolution = async (req: AuthRequest, res: Response): Promise<v
 
     // Update progress
     let progress = await Progress.findOne({ userId, problemId });
+    const wasNotCompleted = !progress || !progress.completed;
 
     if (!progress) {
       progress = await Progress.create({
@@ -107,8 +123,8 @@ export const submitSolution = async (req: AuthRequest, res: Response): Promise<v
       await progress.save();
     }
 
-    // If accepted for first time
-    if (allPassed && !progress.completed) {
+    // If accepted for first time (check before progress was updated)
+    if (allPassed && wasNotCompleted) {
       // Add to user's completed problems
       await User.findByIdAndUpdate(userId, {
         $addToSet: { completedProblems: problemId },

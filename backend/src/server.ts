@@ -22,6 +22,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import discussionRoutes from './routes/discussionRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import rankingsRoutes from './routes/rankingsRoutes';
+import questionRoutes from './routes/questionRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -43,13 +44,15 @@ app.use(
   })
 );
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later',
-});
-app.use('/api', limiter);
+// Rate limiting (disabled in development)
+if (process.env.NODE_ENV === 'production') {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later',
+  });
+  app.use('/api', limiter);
+}
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
@@ -73,6 +76,7 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/discussions', discussionRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/rankings', rankingsRoutes);
+app.use('/api/v1', questionRoutes);
 
 // Health check route
 app.get('/health', (_req: Request, res: Response) => {

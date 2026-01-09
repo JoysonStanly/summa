@@ -13,7 +13,6 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Loader,
   ImageIcon,
   AlertCircle,
   Lightbulb,
@@ -24,8 +23,9 @@ import {
 import { Sidebar } from "@/shared/components/layout";
 import ImageUpload from "@/shared/components/ui/ImageUpload";
 import { useToast } from "@/shared/hooks/ToastContext";
-import { getProblem } from '@/features/problems/data/problems';
 import { dsaTopics, getSubtopicsForTopic } from "@/features/problems/data/dsaTopics";
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { problemsApi } from '@/services/api/api';
 
 interface Example {
   input: string;
@@ -118,12 +118,9 @@ const EditProblemPage = () => {
   const loadProblem = async () => {
     setLoading(true);
     try {
-      // In production, fetch from API
-      // const response = await fetch(`/api/problems/${problemId}`);
-      // const data = await response.json();
-      
-      // For now, load from static data
-      const problem = getProblem('arrays', problemId || '');
+      // Fetch from backend API
+      const response = await problemsApi.getProblemBySlug(problemId || '');
+      const problem = response?.data;
       
       if (problem) {
         const firstSubtopic = getSubtopicsForTopic(problem.topicId)[0]?.id || 'fundamentals';
@@ -400,10 +397,7 @@ const EditProblemPage = () => {
       <div className="flex min-h-screen bg-[#0f0f0f] text-white">
         <Sidebar activePage="home" />
         <main className="flex-1 pl-28 pr-8 py-8 flex items-center justify-center">
-          <div className="text-center">
-            <Loader className="animate-spin text-orange-500 mx-auto mb-4" size={48} />
-            <p className="text-gray-400">Loading problem data...</p>
-          </div>
+          <LoadingSpinner />
         </main>
       </div>
     );

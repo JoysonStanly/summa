@@ -13,6 +13,7 @@
     "migrate": "ts-node src/utils/migrateFromFrontend.ts",
     "migrate-data": "ts-node src/utils/migrateFromFrontendData.ts",
     "create-user": "ts-node src/utils/createTestUser.ts",
+    "create-admin": "ts-node src/utils/createAdmin.ts",
     "export-problems": "ts-node export-problems.ts",
     "import-problems": "ts-node import-problems.ts"
   },

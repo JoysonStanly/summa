@@ -1,42 +1,70 @@
 import api from '@/services/api/axiosClient';
+import { apiCache } from '@/utils/apiCache';
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  const maybeAxiosError = error as { response?: { data?: { message?: string } } };
+  return (
+    maybeAxiosError?.response?.data?.message ||
+    (error instanceof Error ? error.message : fallback)
+  );
+};
 
 export interface Session {
   _id: string;
+  id?: string;
   title: string;
-  description: string;
-  instructor: string;
   date: string;
-  startTime: string;
-  endTime: string;
+  timeRange?: string;
+  meetLink?: string;
   meetingLink?: string;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  thumbnailUrl?: string;
+  videoRecordingUrl?: string;
+  isLive?: boolean;
   maxParticipants?: number;
-  enrolledUsers?: string[];
+  participants?: string[]; // backend field
+  enrolledUsers?: string[]; // legacy/compat
   tags?: string[];
 }
 
 export interface CreateSessionData {
   title: string;
-  description: string;
   date: string;
-  startTime: string;
-  endTime: string;
-  meetingLink?: string;
+  timeRange: string;
+  duration: number;
+  meetLink: string;
+  description?: string;
+  category?: string;
+  thumbnailUrl?: string;
+  videoRecordingUrl?: string;
   maxParticipants?: number;
   tags?: string[];
+  isLive?: boolean;
 }
 
 export const sessionService = {
-  // Get all sessions
-  async getSessions(filter?: 'upcoming' | 'past'): Promise<Session[]> {
+  // Get all sessions with caching
+  async getSessions(filter?: 'upcoming' | 'past', forceRefresh = false): Promise<Session[]> {
+    const cacheKey = `sessions_${filter || 'all'}`;
+    
     try {
-      const response = await api.get<{ success: boolean; data: Session[] }>('/sessions', {
-        params: filter ? { status: filter } : {}
-      });
-      return response.data.data;
-    } catch (error: any) {
+      return await apiCache.fetchWithCache(
+        { key: cacheKey, ttl: 3 * 60 * 1000, forceRefresh }, // 3 minutes cache
+        async () => {
+          const response = await api.get<{ success: boolean; data: Session[] }>('/sessions', {
+            params: filter ? { status: filter } : {}
+          });
+          return response.data.data;
+        }
+      );
+    } catch (error: unknown) {
       console.error('Error fetching sessions:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch sessions');
+      // Return cached data if available, otherwise throw
+      const cached = apiCache.get<Session[]>(cacheKey);
+      if (cached) {
+        console.warn('Using cached sessions data due to API error');
+        return cached;
+      }
+      throw new Error(getErrorMessage(error, 'Failed to fetch sessions'));
     }
   },
 
@@ -45,9 +73,9 @@ export const sessionService = {
     try {
       const response = await api.get<{ success: boolean; data: Session }>(`/sessions/${id}`);
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching session:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch session');
+      throw new Error(getErrorMessage(error, 'Failed to fetch session'));
     }
   },
 
@@ -58,10 +86,14 @@ export const sessionService = {
         '/sessions',
         sessionData
       );
+      // Invalidate all session caches after creating
+      apiCache.delete('sessions_all');
+      apiCache.delete('sessions_upcoming');
+      apiCache.delete('sessions_past');
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating session:', error);
-      throw new Error(error.response?.data?.message || 'Failed to create session');
+      throw new Error(getErrorMessage(error, 'Failed to create session'));
     }
   },
 
@@ -72,10 +104,14 @@ export const sessionService = {
         `/sessions/${id}`,
         sessionData
       );
+      // Invalidate all session caches after updating
+      apiCache.delete('sessions_all');
+      apiCache.delete('sessions_upcoming');
+      apiCache.delete('sessions_past');
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating session:', error);
-      throw new Error(error.response?.data?.message || 'Failed to update session');
+      throw new Error(getErrorMessage(error, 'Failed to update session'));
     }
   },
 
@@ -83,9 +119,13 @@ export const sessionService = {
   async deleteSession(id: string): Promise<void> {
     try {
       await api.delete(`/sessions/${id}`);
-    } catch (error: any) {
+      // Invalidate all session caches after deleting
+      apiCache.delete('sessions_all');
+      apiCache.delete('sessions_upcoming');
+      apiCache.delete('sessions_past');
+    } catch (error: unknown) {
       console.error('Error deleting session:', error);
-      throw new Error(error.response?.data?.message || 'Failed to delete session');
+      throw new Error(getErrorMessage(error, 'Failed to delete session'));
     }
   },
 
@@ -93,12 +133,25 @@ export const sessionService = {
   async enrollInSession(id: string): Promise<Session> {
     try {
       const response = await api.post<{ success: boolean; data: Session }>(
-        `/sessions/${id}/enroll`
+        `/sessions/${id}/register`
       );
       return response.data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error enrolling in session:', error);
-      throw new Error(error.response?.data?.message || 'Failed to enroll in session');
+      throw new Error(getErrorMessage(error, 'Failed to enroll in session'));
+    }
+  },
+
+  // Check if user is registered
+  async checkRegistration(id: string): Promise<boolean> {
+    try {
+      const response = await api.get<{ success: boolean; data: { registered: boolean } }>(
+        `/sessions/${id}/is-registered`
+      );
+      return response.data.data.registered;
+    } catch (error: unknown) {
+      console.error('Error checking registration:', error);
+      return false;
     }
   },
 };

@@ -16,6 +16,7 @@
     "start-all": "concurrently \"npm run start-backend\" \"npm run start-frontend\""
   },
   "dependencies": {
+    "react-split-pane": "^3.0.4",
     "slugify": "^1.6.6"
   },
   "devDependencies": {

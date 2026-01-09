@@ -62,57 +62,57 @@ const SubmissionResultDisplay: React.FC<SubmissionResultDisplayProps> = ({ resul
   };
 
   return (
-    <div className="bg-[#1e1e1e] rounded-lg p-6 my-4">
-      <div className="mb-4 flex justify-between items-center">
-        <h3 className="text-xl font-bold">Submission Result</h3>
+    <div className="bg-[#1e1e1e] rounded-lg p-3 sm:p-4 md:p-6 my-3 sm:my-4">
+      <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+        <h3 className="text-lg sm:text-xl font-bold">Submission Result</h3>
         <div>{getStatusBadge(result.status)}</div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-[#2d2d2d] p-3 rounded-md">
-          <p className="text-sm text-gray-400">Execution Time</p>
-          <p className="text-lg font-semibold">{formatTime(result.timeTaken)}</p>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="bg-[#2d2d2d] p-2.5 sm:p-3 rounded-md">
+          <p className="text-xs sm:text-sm text-gray-400">Execution Time</p>
+          <p className="text-base sm:text-lg font-semibold">{formatTime(result.timeTaken)}</p>
         </div>
-        <div className="bg-[#2d2d2d] p-3 rounded-md">
-          <p className="text-sm text-gray-400">Memory Usage</p>
-          <p className="text-lg font-semibold">{formatMemory(result.memory)}</p>
+        <div className="bg-[#2d2d2d] p-2.5 sm:p-3 rounded-md">
+          <p className="text-xs sm:text-sm text-gray-400">Memory Usage</p>
+          <p className="text-base sm:text-lg font-semibold">{formatMemory(result.memory)}</p>
         </div>
       </div>
 
       {result.message && (
-        <div className={`p-3 mb-4 rounded-md ${
+        <div className={`p-2.5 sm:p-3 mb-3 sm:mb-4 rounded-md ${
           result.status === 'accepted' ? 'bg-green-800 bg-opacity-20' : 'bg-red-800 bg-opacity-20'
         }`}>
-          <p className={`${getStatusColor(result.status)}`}>{result.message}</p>
+          <p className={`text-xs sm:text-sm ${getStatusColor(result.status)}`}>{result.message}</p>
         </div>
       )}
 
       {result.testResults && result.testResults.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-lg font-semibold mb-2">Test Results</h4>
+        <div className="mt-3 sm:mt-4">
+          <h4 className="text-base sm:text-lg font-semibold mb-2">Test Results</h4>
           <div className="space-y-2">
-            {result.testResults.map((test, index) => (
+            {result.testResults.slice(0, 2).map((test, index) => (
               <div 
                 key={index}
-                className={`p-3 rounded-md ${
+                className={`p-2.5 sm:p-3 rounded-md ${
                   test.passed ? 'bg-green-800 bg-opacity-20' : 'bg-red-800 bg-opacity-20'
                 }`}
               >
                 <div className="flex justify-between mb-1">
-                  <span className="font-medium">Test Case #{index + 1}</span>
-                  <span className={test.passed ? 'text-green-500' : 'text-red-500'}>
+                  <span className="text-sm sm:text-base font-medium">Case {index + 1}</span>
+                  <span className={`text-sm sm:text-base ${test.passed ? 'text-green-500' : 'text-red-500'}`}>
                     {test.passed ? 'Passed' : 'Failed'}
                   </span>
                 </div>
                 
                 {test.executionTime && (
-                  <div className="text-sm text-gray-400">
+                  <div className="text-xs sm:text-sm text-gray-400">
                     Execution time: {formatTime(test.executionTime)}
                   </div>
                 )}
                 
                 {test.error && (
-                  <div className="text-sm text-red-400 mt-2">
+                  <div className="text-xs sm:text-sm text-red-400 mt-2 break-words">
                     Error: {test.error}
                   </div>
                 )}

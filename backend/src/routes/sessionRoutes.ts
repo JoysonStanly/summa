@@ -7,6 +7,7 @@ import {
   deleteSession,
   registerForSession,
   unregisterFromSession,
+  checkRegistration,
 } from '../controllers/sessionController';
 import { protect, authorize } from '../middleware/auth';
 
@@ -25,5 +26,6 @@ router
 
 router.route('/:id/register').post(protect, registerForSession);
 router.route('/:id/unregister').post(protect, unregisterFromSession);
+router.route('/:id/is-registered').get(protect, checkRegistration);
 
 export default router;

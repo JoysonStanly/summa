@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, Image as ImageIcon, Loader } from 'lucide-react';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
 
 interface ImageUploadProps {
   label?: string;
@@ -128,9 +128,16 @@ const ImageUpload = ({
 
         <div className="text-center">
           {uploading ? (
-            <div className="flex flex-col items-center gap-3">
-              <Loader className="animate-spin text-orange-500" size={40} />
-              <p className="text-gray-400">Uploading images...</p>
+            <div className="flex flex-col items-center justify-center">
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="w-3 h-3 bg-orange-500 rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  />
+                ))}
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">

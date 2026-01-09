@@ -11,7 +11,7 @@ interface TopBarProps {
 
 const TopBar: FC<TopBarProps> = ({ day = 1, progress = 0, streak = 0, coins = 0 }) => {
   return (
-    <div className="flex items-center justify-between py-4 px-4">
+    <div className="flex items-center justify-between px-4 py-4">
       <div className="flex items-center gap-4">
         {/* Day counter */}
         <div className="flex flex-col">
@@ -22,7 +22,7 @@ const TopBar: FC<TopBarProps> = ({ day = 1, progress = 0, streak = 0, coins = 0 
         {/* Progress bar */}
         <div className="relative w-72 h-2 bg-[#333] rounded-full overflow-hidden">
           <div 
-            className="absolute left-0 top-0 h-full bg-gradient-to-r from-orange-500 to-amber-400"
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 to-amber-400"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -35,7 +35,7 @@ const TopBar: FC<TopBarProps> = ({ day = 1, progress = 0, streak = 0, coins = 0 
         
         {/* Day streak */}
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center">
+          <div className="flex items-center justify-center w-6 h-6 bg-yellow-500 rounded-full">
             <span className="text-xs">🔥</span>
           </div>
           <div className="flex flex-col">
@@ -47,7 +47,7 @@ const TopBar: FC<TopBarProps> = ({ day = 1, progress = 0, streak = 0, coins = 0 
         {/* Coins */}
         <div className="flex items-center gap-1">
           <span className="text-lg font-bold">{coins}</span>
-          <div className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center">
+          <div className="flex items-center justify-center w-6 h-6 bg-yellow-500 rounded-full">
             <span className="text-xs">🪙</span>
           </div>
         </div>

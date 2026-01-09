@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useToast } from '@/shared/hooks/ToastContext';
 import { Settings, Users, SlidersVertical, Shield, MessageSquare, History, ChevronDown, Home, Link2, Copy, TrendingUp, Wallet, DollarSign, Calendar, Star, Monitor, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const AccountPage = () => {
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
   const [activeSection, setActiveSection] = useState('summary');
   const [hideDifficulty, setHideDifficulty] = useState(false);
   const [hideCompany, setHideCompany] = useState(false);

@@ -13,34 +13,7 @@ interface Comment {
 
 const Discussion = () => {
   const [comment, setComment] = useState("");
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      author: "Alice Johnson",
-      content: "Great explanation of OS concepts! The real-life analogy really helped me understand the coordinator role.",
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      likes: 5,
-      isLiked: false,
-      replies: [
-        {
-          id: "1-1",
-          author: "Bob Smith",
-          content: "I agree! The concert coordinator analogy was perfect.",
-          timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
-          likes: 2,
-          isLiked: true
-        }
-      ]
-    },
-    {
-      id: "2", 
-      author: "Charlie Brown",
-      content: "Can someone explain the difference between multiprogramming and multitasking again?",
-      timestamp: new Date(Date.now() - 30 * 60 * 1000),
-      likes: 3,
-      isLiked: false
-    }
-  ]);
+  const [comments, setComments] = useState<Comment[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

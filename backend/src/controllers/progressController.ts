@@ -1,7 +1,10 @@
 import { Response } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../types';
 import Progress from '../models/Progress';
 import User from '../models/User';
+import Problem from '../models/Problem';
+import { updateUserStreak } from '../utils/streakHelper';
 
 /**
  * @desc    Get user progress for all problems
@@ -80,8 +83,9 @@ export const getProblemProgress = async (req: AuthRequest, res: Response): Promi
 export const getUserStreak = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
+    console.log('🔥 getUserStreak called for userId:', userId);
 
-    const user = await User.findById(userId).select('streakData');
+    const user = await User.findById(userId).select('streakData dailyCheckedProblems');
 
     if (!user) {
       res.status(404).json({
@@ -91,9 +95,54 @@ export const getUserStreak = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    // Get all progress records with dates to build calendar
+    const progressRecords = await Progress.find({ userId }).select('lastAttemptDate');
+    
+    // Build array of unique dates where user was active
+    const streakDays = new Set<string>();
+    progressRecords.forEach(record => {
+      if (record.lastAttemptDate) {
+        const date = new Date(record.lastAttemptDate);
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        streakDays.add(dateStr);
+      }
+    });
+
+    // Include dates from dailyCheckedProblems (checkbox clicks)
+    if (user.dailyCheckedProblems && user.dailyCheckedProblems.length > 0) {
+      console.log('Adding dailyCheckedProblems to streakDays:', {
+        count: user.dailyCheckedProblems.length,
+        problems: user.dailyCheckedProblems.map((item: any) => ({
+          problemId: item.problemId.toString(),
+          checkedDate: item.checkedDate
+        }))
+      });
+      user.dailyCheckedProblems.forEach((item: any) => {
+        if (item.checkedDate) {
+          const date = new Date(item.checkedDate);
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          streakDays.add(dateStr);
+        }
+      });
+    }
+
+    // Include today if streak is active
+    if (user.streakData.lastActiveDate) {
+      const lastActive = new Date(user.streakData.lastActiveDate);
+      const dateStr = `${lastActive.getFullYear()}-${String(lastActive.getMonth() + 1).padStart(2, '0')}-${String(lastActive.getDate()).padStart(2, '0')}`;
+      streakDays.add(dateStr);
+    }
+
+    console.log('Final streakDays:', Array.from(streakDays));
+
     res.status(200).json({
       success: true,
-      data: user.streakData,
+      data: {
+        currentStreak: user.streakData.currentStreak,
+        maxStreak: user.streakData.maxStreak,
+        lastActiveDate: user.streakData.lastActiveDate,
+        streakDays: Array.from(streakDays)
+      },
     });
   } catch (error: any) {
     console.error('Get streak error:', error);
@@ -242,12 +291,88 @@ export const createProgress = async (req: AuthRequest, res: Response): Promise<v
     const { problemId, action } = req.body;
     const userId = req.user?._id;
 
-    let progress = await Progress.findOne({ userId, problemId });
+    console.log('createProgress called:', { action, problemId, userId: userId?.toString() });
+
+    // Convert problemId (slug) to ObjectId
+    let actualProblemId = problemId;
+    if (problemId && !mongoose.Types.ObjectId.isValid(problemId)) {
+      // If problemId is not a valid ObjectId, treat it as a slug and look up the problem
+      const problem = await Problem.findOne({ slug: problemId });
+      if (!problem) {
+        res.status(404).json({
+          success: false,
+          message: 'Problem not found',
+        });
+        return;
+      }
+      actualProblemId = problem._id;
+      console.log('Converted slug to ObjectId:', { slug: problemId, objectId: actualProblemId.toString() });
+    }
+
+    // For 'streak' action, we don't need problemId - just update user streak
+    if (action === 'streak') {
+      await updateUserStreak(userId?.toString() || '');
+      
+      // Also save the checked problem for today
+      if (actualProblemId) {
+        const user = await User.findById(userId);
+        if (user) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          // Remove old entries for this problem
+          user.dailyCheckedProblems = user.dailyCheckedProblems.filter(
+            (item: any) => item.problemId.toString() !== actualProblemId.toString()
+          );
+          
+          // Add new entry
+          user.dailyCheckedProblems.push({
+            problemId: actualProblemId,
+            checkedDate: today,
+          });
+          
+          console.log('Saving problem to dailyCheckedProblems:', {
+            problemId: actualProblemId.toString(),
+            checkedDate: today.toISOString(),
+            totalChecked: user.dailyCheckedProblems.length
+          });
+          
+          await user.save();
+          console.log('Problem saved to dailyCheckedProblems successfully');
+        }
+      }
+      
+      // Return updated progress data
+      const progressRecords = await Progress.find({ userId });
+      const completedProblems = progressRecords
+        .filter((p) => p.completed)
+        .map((p) => p.problemId.toString());
+
+      const user = await User.findById(userId);
+      const data = {
+        userId: userId?.toString() || '',
+        problemsSolved: completedProblems.length,
+        totalSubmissions: progressRecords.reduce((sum, p) => sum + p.attempts, 0),
+        acceptedSubmissions: completedProblems.length,
+        streak: user?.streakData?.currentStreak || 0,
+        lastActiveDate: new Date().toISOString(),
+        completedProblems,
+      };
+
+      res.status(200).json({
+        success: true,
+        data,
+      });
+      return;
+    }
+
+    // For 'attempted' and 'solved' actions, we need a valid problemId
+    let progress = await Progress.findOne({ userId, problemId: actualProblemId });
 
     if (!progress) {
       progress = await Progress.create({
         userId,
-        problemId,
+        problemId: actualProblemId,
         attempts: action === 'attempted' ? 1 : 0,
         completed: action === 'solved',
         lastAttemptDate: new Date(),
@@ -263,14 +388,9 @@ export const createProgress = async (req: AuthRequest, res: Response): Promise<v
       await progress.save();
     }
 
-    // Update user streak
+    // Update user streak for 'solved' action
     if (action === 'solved') {
-      const user = await User.findById(userId);
-      if (user) {
-        user.streakData.currentStreak = (user.streakData?.currentStreak || 0) + 1;
-        user.streakData.lastActiveDate = new Date();
-        await user.save();
-      }
+      await updateUserStreak(userId?.toString() || '');
     }
 
     // Return updated progress data
@@ -299,6 +419,92 @@ export const createProgress = async (req: AuthRequest, res: Response): Promise<v
     res.status(500).json({
       success: false,
       message: 'Error creating progress',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get user's checked problems for today
+ * @route   GET /api/v1/progress/checked
+ * @access  Private
+ */
+export const getCheckedProblems = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+    
+    const user = await User.findById(userId).select('dailyCheckedProblems');
+    
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+    
+    // Get today's date (start of day)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Filter checked problems for today
+    const checkedToday = user.dailyCheckedProblems
+      .filter((item: any) => {
+        const checkedDate = new Date(item.checkedDate);
+        checkedDate.setHours(0, 0, 0, 0);
+        return checkedDate.getTime() === today.getTime();
+      })
+      .map((item: any) => item.problemId.toString());
+    
+    res.status(200).json({
+      success: true,
+      data: checkedToday,
+    });
+  } catch (error: any) {
+    console.error('Get checked problems error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching checked problems',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Uncheck a problem (remove from daily checked problems)
+ * @route   POST /api/v1/progress/uncheck
+ * @access  Private
+ */
+export const uncheckProblem = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { problemId } = req.body;
+    const userId = req.user?._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    // Remove the problem from dailyCheckedProblems
+    user.dailyCheckedProblems = user.dailyCheckedProblems.filter(
+      (item: any) => item.problemId.toString() !== problemId
+    );
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Problem unchecked successfully',
+    });
+  } catch (error: any) {
+    console.error('Uncheck problem error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error unchecking problem',
       error: error.message,
     });
   }

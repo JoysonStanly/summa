@@ -1,7 +1,16 @@
 import express from 'express';
 import { validationResult } from 'express-validator';
-import { register, login, logout, getMe } from '../controllers/authController';
-import { protect } from '../middleware/auth';
+import { 
+  register, 
+  login, 
+  logout, 
+  getMe, 
+  getTotalUsers,
+  getAllUsers,
+  updateUser,
+  deleteUser
+} from '../controllers/authController';
+import { protect, authorize } from '../middleware/auth';
 import { registerValidation, loginValidation } from '../middleware/validation';
 import { Request, Response, NextFunction } from 'express';
 
@@ -49,5 +58,33 @@ router.post('/logout', protect, logout);
  * @access  Private
  */
 router.get('/me', protect, getMe);
+
+/**
+ * @route   GET /api/v1/users/count
+ * @desc    Get total users count
+ * @access  Public
+ */
+router.get('/users/count', getTotalUsers);
+
+/**
+ * @route   GET /api/v1/auth/users
+ * @desc    Get all users (Admin only)
+ * @access  Private/Admin
+ */
+router.get('/users', protect, authorize('admin'), getAllUsers);
+
+/**
+ * @route   PUT /api/v1/auth/users/:id
+ * @desc    Update user (Admin only)
+ * @access  Private/Admin
+ */
+router.put('/users/:id', protect, authorize('admin'), updateUser);
+
+/**
+ * @route   DELETE /api/v1/auth/users/:id
+ * @desc    Delete user (Admin only)
+ * @access  Private/Admin
+ */
+router.delete('/users/:id', protect, authorize('admin'), deleteUser);
 
 export default router;

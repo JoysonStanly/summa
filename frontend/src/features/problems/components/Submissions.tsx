@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Activity, Trash2, ThumbsUp, ThumbsDown, Bug, StickyNote, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Activity, Trash2, ThumbsUp, ThumbsDown, Bug, StickyNote, ChevronLeft, ChevronRight, Check, TrendingUp } from 'lucide-react';
 
 // Define the types for our submission data
 interface Submission {
@@ -8,6 +8,21 @@ interface Submission {
   language: string;
   timestamp: string;
   hasAnalysis: boolean;
+}
+
+// 🎯 Interface for latest submission result from Submit button
+interface LatestSubmission {
+  status: string;
+  testCasesPassed: number;
+  totalTestCases: number;
+  memoryUsed: string;
+  language: string;
+  timestamp: string;
+}
+
+interface SubmissionsProps {
+  latestSubmission?: LatestSubmission | null;
+  isSubmitting?: boolean; // Loading state
 }
 
 // Mock data for submissions (19 submissions total to match the HTML example)
@@ -34,11 +49,8 @@ const mockSubmissions: Submission[] = [
 ];
 
 
-const Submissions = () => {
+const Submissions = ({ latestSubmission, isSubmitting }: SubmissionsProps) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isDisliked, setIsDisliked] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(true);
   const submissionsPerPage = 10;
   
   // Calculate submissions for current page
@@ -85,31 +97,131 @@ const Submissions = () => {
   };
   
   return (
-    <div className="flex flex-col h-full w-full relative">
+    <div className="relative flex flex-col w-full h-full">
       <div className="flex flex-col p-3">
+        
+        {/* 🎯 Loading Skeleton - Shows during submission (3 seconds) */}
+        {isSubmitting && (
+          <div className="relative mb-3 animate-pulse">
+            <div className="flex items-center justify-between px-1 mb-2">
+              <div className="w-32 h-4 rounded bg-zinc-700"></div>
+            </div>
+            <div className="p-2 border border-zinc-700 rounded-xl">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-48 h-6 rounded bg-zinc-700"></div>
+                <div className="w-32 h-8 rounded-full bg-zinc-700"></div>
+              </div>
+              <div className="h-16 mb-3 w-80 bg-zinc-700 rounded-xl"></div>
+              <div className="p-3 space-y-3 border border-zinc-700 rounded-xl w-fit">
+                <div className="h-4 rounded w-96 bg-zinc-700"></div>
+                <div className="h-4 rounded w-96 bg-zinc-700"></div>
+                <div className="h-4 rounded w-96 bg-zinc-700"></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* 🎯 Current Submission Card - Shows when latestSubmission exists */}
+        {!isSubmitting && latestSubmission && (
+          <div className="relative mb-3" style={{ opacity: 1, filter: 'blur(0px)', height: 'auto', transform: 'none' }}>
+            <div className="flex items-center justify-between px-1 mb-2" style={{ opacity: 1, transform: 'none' }}>
+              <div className="text-sm font-medium">Current Submission</div>
+            </div>
+            <div className="p-2 border border-zinc-700 rounded-xl" style={{ transformStyle: 'preserve-3d', perspective: '1000px', opacity: 1, filter: 'blur(0px)', transform: 'none' }}>
+              <div style={{ opacity: 1, transform: 'none' }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="flex items-center gap-x-1">
+                      <span className="text-sm text-zinc-400">Submission Verdict:</span>
+                      <div className={`inline-flex items-center rounded-full text-sm ${
+                        latestSubmission.status === 'Accepted' ? 'text-green-500' : 'text-red-500'
+                      }`}>
+                        {latestSubmission.status}
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 cursor-pointer"
+                  >
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    <span>Analyse code</span>
+                  </button>
+                </div>
+              </div>
+              <div style={{ opacity: 1, transform: 'none' }}>
+                <div 
+                  className="relative mb-3 mt-2 flex flex-wrap items-center gap-x-8 gap-y-2 rounded-xl px-3 py-2 text-[13px] text-green-400"
+                  style={{ backgroundColor: 'color-mix(in srgb, rgb(34, 197, 94) 20%, transparent)' }}
+                >
+                  <div className="absolute top-0 left-0 w-full h-full" style={{ background: 'linear-gradient(175deg, rgba(255,255,255,0.1) 0%, transparent 100%)' }}></div>
+                  <div className="relative z-10 font-medium text-zinc-400">
+                    Test Cases Passed : <span className="text-green-400 bg-transparent"> {latestSubmission.testCasesPassed}</span>/{latestSubmission.totalTestCases}
+                  </div>
+                  <div className="relative z-10 font-medium text-zinc-400">Memory Used : {latestSubmission.memoryUsed}</div>
+                </div>
+              </div>
+              <div className="pb-2 border border-zinc-700 rounded-xl" style={{ opacity: 1, transform: 'none' }}>
+                <div className="mt-2 mb-3 space-y-2 text-sm rounded-md">
+                  <div className="flex items-center justify-between px-3 py-2 border-b rounded-md rounded-b-none border-zinc-700">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div style={{ opacity: 1, transform: 'none' }}>
+                        <Check className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span>Compilation Check</span>
+                    </div>
+                    <span className="text-zinc-500 !text-xs">Code compiled successfully</span>
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-2 border-b rounded-md rounded-b-none border-zinc-700">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div style={{ opacity: 1, transform: 'none' }}>
+                        <Check className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span>Test Cases (Small)</span>
+                    </div>
+                    <span className="text-zinc-500 !text-xs">Code passed for the given test case</span>
+                  </div>
+                  <div className="flex items-center justify-between px-3 pt-2 rounded-md">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div style={{ opacity: 1, transform: 'none' }}>
+                        <Check className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span>Test Cases (Large)</span>
+                    </div>
+                    <span className="text-zinc-500 !text-xs">Large testcases passed successfully</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
+          {/* All Submissions Section Label */}
+          <p className="mb-2 text-sm font-medium">All Submissions</p>
+          
           {/* Table container */}
-          <div className="rounded-xl border border-zinc-700">
+          <div className="border rounded-xl border-zinc-700">
             <div className="relative w-full overflow-x-auto">
-              <table className="w-full caption-bottom text-sm">
+              <table className="w-full text-sm caption-bottom">
                 <thead className="border-b border-zinc-700">
-                  <tr className="hover:bg-zinc-800/50 transition-colors">
+                  <tr className="transition-colors hover:bg-zinc-800/50">
                     <th className="h-10 px-2 text-left align-middle whitespace-nowrap w-[60px] text-zinc-400 font-normal">
                       No.
                     </th>
-                    <th className="h-10 px-2 text-left align-middle whitespace-nowrap text-zinc-400 font-normal">
+                    <th className="h-10 px-2 font-normal text-left align-middle whitespace-nowrap text-zinc-400">
                       Status
                     </th>
-                    <th className="h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-zinc-400">
+                    <th className="h-10 px-2 font-medium text-left align-middle whitespace-nowrap text-zinc-400">
                       Language
                     </th>
-                    <th className="h-10 px-2 align-middle whitespace-nowrap text-center text-zinc-400 font-normal">
+                    <th className="h-10 px-2 font-normal text-center align-middle whitespace-nowrap text-zinc-400">
                       Code
                     </th>
-                    <th className="h-10 px-2 align-middle whitespace-nowrap text-center text-zinc-400 font-normal">
+                    <th className="h-10 px-2 font-normal text-center align-middle whitespace-nowrap text-zinc-400">
                       Analysis
                     </th>
-                    <th className="h-10 px-2 align-middle whitespace-nowrap text-center text-zinc-400 font-normal">
+                    <th className="h-10 px-2 font-normal text-center align-middle whitespace-nowrap text-zinc-400">
                       Action
                     </th>
                   </tr>
@@ -117,7 +229,7 @@ const Submissions = () => {
                 <tbody>
                   {currentSubmissions.map((submission, index) => (
                     <tr key={submission.id} className="border-b border-zinc-700">
-                      <td className="p-2 align-middle whitespace-nowrap font-medium">
+                      <td className="p-2 font-medium align-middle whitespace-nowrap">
                         {indexOfFirstSubmission + index + 1}
                       </td>
                       <td className="p-2 align-middle whitespace-nowrap">
@@ -126,42 +238,42 @@ const Submissions = () => {
                             {submission.status}
                           </span>
                         </div>
-                        <div className="text-xs text-zinc-500 mt-1">{submission.timestamp}</div>
+                        <div className="mt-1 text-xs text-zinc-500">{submission.timestamp}</div>
                       </td>
                       <td className="p-2 align-middle whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center text-xs font-medium whitespace-nowrap px-3 rounded-xl py-1 bg-zinc-800 text-zinc-300">
+                        <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium whitespace-nowrap rounded-xl bg-zinc-800 text-zinc-300">
                           {submission.language}
                         </span>
                       </td>
-                      <td className="p-2 align-middle whitespace-nowrap text-center">
+                      <td className="p-2 text-center align-middle whitespace-nowrap">
                         <button
                           onClick={() => handleViewCode(submission.id)}
-                          className="cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all size-9 hover:bg-zinc-800 group"
+                          className="inline-flex items-center justify-center gap-2 text-sm font-medium transition-all rounded-md cursor-pointer whitespace-nowrap size-9 hover:bg-zinc-800 group"
                           aria-label="View Code"
                         >
                           <Eye className="h-4 w-4 text-zinc-400 group-hover:text-[#FF6D00] transition-all duration-300" />
                         </button>
                       </td>
-                      <td className="p-2 align-middle whitespace-nowrap text-center">
+                      <td className="p-2 text-center align-middle whitespace-nowrap">
                         {submission.hasAnalysis ? (
                           <button
                             onClick={() => handleViewAnalysis(submission.id)}
-                            className="cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all size-9 hover:bg-zinc-800 group"
+                            className="inline-flex items-center justify-center gap-2 text-sm font-medium transition-all rounded-md cursor-pointer whitespace-nowrap size-9 hover:bg-zinc-800 group"
                             aria-label="Analysis"
                           >
-                            <Activity className="h-4 w-4 text-zinc-400 group-hover:text-yellow-400 transition-all duration-300" />
+                            <Activity className="w-4 h-4 transition-all duration-300 text-zinc-400 group-hover:text-yellow-400" />
                           </button>
                         ) : (
                           <span className="text-zinc-500">-</span>
                         )}
                       </td>
-                      <td className="p-2 align-middle whitespace-nowrap text-center">
+                      <td className="p-2 text-center align-middle whitespace-nowrap">
                         <button
                           onClick={() => handleDelete(submission.id)}
-                          className="cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all size-9 hover:bg-zinc-800 group"
+                          className="inline-flex items-center justify-center gap-2 text-sm font-medium transition-all rounded-md cursor-pointer whitespace-nowrap size-9 hover:bg-zinc-800 group"
                           aria-label="Delete"
                         >
-                          <Trash2 className="h-4 w-4 text-zinc-400 group-hover:text-red-500 transition-all duration-300" />
+                          <Trash2 className="w-4 h-4 transition-all duration-300 text-zinc-400 group-hover:text-red-500" />
                         </button>
                       </td>
                     </tr>
@@ -172,7 +284,7 @@ const Submissions = () => {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between text-sm mt-3">
+          <div className="flex items-center justify-between mt-3 text-sm">
             <div className="text-zinc-400">
               Showing {currentSubmissions.length} out of {mockSubmissions.length} submissions
             </div>
@@ -185,86 +297,6 @@ const Submissions = () => {
                 aria-label="Next page"
               >
                 <ChevronRight className="w-full h-full" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sticky footer bar */}
-      <div className="sticky mt-auto bottom-0 left-0 right-0 z-10 bg-zinc-950 border-t border-zinc-700">
-        <div className="flex flex-row justify-between items-center px-4 py-1">
-          {/* Left side - Like, Dislike, Bug, Notes */}
-          <div className="flex items-center gap-x-3">
-            <button
-              onClick={() => {
-                setIsLiked(!isLiked);
-                if (isDisliked) setIsDisliked(false);
-              }}
-              className="flex items-center gap-x-2 text-zinc-400 cursor-pointer hover:text-zinc-300"
-              aria-pressed={isLiked}
-              aria-label="Like problem"
-            >
-              <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-current text-[#FF6D00]' : ''}`} />
-              <span className="text-sm">6</span>
-            </button>
-            <button
-              onClick={() => {
-                setIsDisliked(!isDisliked);
-                if (isLiked) setIsLiked(false);
-              }}
-              className="flex items-center text-zinc-400 cursor-pointer hover:text-zinc-300"
-              aria-pressed={isDisliked}
-              aria-label="Dislike problem"
-            >
-              <ThumbsDown className={`w-4 h-4 ${isDisliked ? 'fill-current text-[#FF6D00]' : ''}`} />
-            </button>
-            <div className="h-[12px] w-[1px] bg-zinc-700"></div>
-            <button
-              type="button"
-              className="text-sm transition-colors text-zinc-400 cursor-pointer hover:text-zinc-300"
-              aria-label="Report a bug for this problem"
-            >
-              <Bug className="w-4 h-4" />
-            </button>
-            <div className="h-[12px] w-[1px] bg-zinc-700"></div>
-            <button
-              type="button"
-              className="text-sm text-zinc-400 hover:text-[#FF6D00] transition-colors cursor-pointer"
-              aria-label="Open notes"
-            >
-              <StickyNote className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Right side - Auto-play, Prev/Next problem */}
-          <div className="flex items-center gap-x-3">
-            <div className="flex items-center gap-4">
-              <label className="flex select-none items-center gap-2 text-xs text-zinc-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autoPlay}
-                  onChange={() => setAutoPlay(!autoPlay)}
-                  className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 checked:bg-[#FF6D00] checked:border-[#FF6D00] cursor-pointer"
-                />
-              </label>
-            </div>
-            <div className="h-[12px] w-[1px] bg-zinc-700"></div>
-            <div className="flex flex-row justify-between items-center gap-x-2 text-zinc-400">
-              <button
-                type="button"
-                aria-label="Previous problem"
-                className="disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed hover:text-zinc-300"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <div className="h-[12px] w-[1px] bg-zinc-700"></div>
-              <button
-                type="button"
-                aria-label="Next problem"
-                className="disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed hover:text-zinc-300"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

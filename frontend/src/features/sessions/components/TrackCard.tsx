@@ -14,6 +14,7 @@ interface TrackCardProps {
   quizzes?: { count: number; label: string };
   progress: number;
   icon?: React.ReactNode;
+  buttonText?: string;
 }
 
 const TrackCard: FC<TrackCardProps> = ({
@@ -26,7 +27,8 @@ const TrackCard: FC<TrackCardProps> = ({
   chapters,
   quizzes,
   progress,
-  icon
+  icon,
+  buttonText = 'Start Learning'
 }) => {
   // Define gradient based on color
   const getGradient = () => {
@@ -63,7 +65,7 @@ const TrackCard: FC<TrackCardProps> = ({
       <div className="absolute top-4 right-4">
         <ProgressCircle 
           percentage={progress} 
-          color={progress > 0 ? "white" : "transparent"} 
+          color="white" 
         />
       </div>
       
@@ -129,7 +131,7 @@ const TrackCard: FC<TrackCardProps> = ({
         
         {/* Button to indicate interactivity */}
         <button className="w-full mt-5 py-2.5 bg-white/10 hover:bg-white/20 text-sm font-medium rounded-md transition-colors">
-          Continue
+          {buttonText}
         </button>
         
         {/* Card Icon */}

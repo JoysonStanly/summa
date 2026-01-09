@@ -79,67 +79,117 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
   }
 
   return (
-    <div className="bg-[#1e1e1e] rounded-lg p-4">
-      <h3 className="text-xl font-bold mb-4">Submission History</h3>
+    <div className="bg-[#1e1e1e] rounded-lg p-3 sm:p-4">
+      <style>{`
+        .submission-scroll-container {
+          position: relative;
+          width: 100%;
+        }
+        
+        .submission-scroll-wrapper {
+          overflow-x: auto;
+          overflow-y: visible;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+          scrollbar-color: #9ca3af #2d2d2d;
+        }
+        
+        .submission-scroll-wrapper::-webkit-scrollbar {
+          height: 12px;
+        }
+        
+        .submission-scroll-wrapper::-webkit-scrollbar-track {
+          background: #2d2d2d;
+          border-radius: 6px;
+        }
+        
+        .submission-scroll-wrapper::-webkit-scrollbar-thumb {
+          background: #9ca3af;
+          border-radius: 6px;
+          border: 2px solid #2d2d2d;
+        }
+        
+        .submission-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+          background: #d1d5db;
+        }
+        
+        .submission-table {
+          min-width: 900px;
+          width: max-content;
+        }
+      `}</style>
       
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead className="bg-[#2d2d2d]">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Language
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Runtime
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Memory
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Submitted
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-[#1e1e1e] divide-y divide-gray-700">
-            {submissions.map((submission) => (
-              <tr key={submission._id} className="hover:bg-[#2a2a2a]">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`${getStatusColor(submission.result)}`}>
-                    {submission.result.charAt(0).toUpperCase() + submission.result.slice(1)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {submission.language}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {submission.timeTaken} ms
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {submission.memory} KB
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {formatDate(submission.createdAt)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {onViewSubmission && (
-                    <button
-                      onClick={() => onViewSubmission(submission._id)}
-                      className="text-blue-500 hover:text-blue-400"
-                    >
-                      View
-                    </button>
-                  )}
-                </td>
+      <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Submission History</h3>
+      
+      {/* Scroll Indicator for Mobile */}
+      <div className="md:hidden mb-2 px-3 py-2 bg-[#2d2d2d] rounded-md text-center">
+        <p className="text-xs text-gray-300">
+          👆 Scroll left and right to see all columns
+        </p>
+      </div>
+      
+      {/* Scrollable Table Container */}
+      <div className="submission-scroll-container">
+        <div className="submission-scroll-wrapper border border-gray-700 rounded-lg">
+          <table className="submission-table w-full divide-y divide-gray-700">
+          <table className="submission-table w-full divide-y divide-gray-700">
+            <thead className="bg-[#2d2d2d]">
+              <tr>
+                <th scope="col" className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                  Status
+                </th>
+                <th scope="col" className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                  Language
+                </th>
+                <th scope="col" className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                  Runtime
+                </th>
+                <th scope="col" className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                  Memory
+                </th>
+                <th scope="col" className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                  Submitted
+                </th>
+                <th scope="col" className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                  Action
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-[#1e1e1e] divide-y divide-gray-700">
+              {submissions.map((submission) => (
+                <tr key={submission._id} className="hover:bg-[#2a2a2a]">
+                  <td className="px-3 sm:px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm">
+                    <span className={`${getStatusColor(submission.result)}`}>
+                      {submission.result.charAt(0).toUpperCase() + submission.result.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-3 sm:px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm">
+                    {submission.language}
+                  </td>
+                  <td className="px-3 sm:px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm">
+                    {submission.timeTaken} ms
+                  </td>
+                  <td className="px-3 sm:px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm">
+                    {submission.memory} KB
+                  </td>
+                  <td className="px-3 sm:px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm">
+                    {formatDate(submission.createdAt)}
+                  </td>
+                  <td className="px-3 sm:px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-xs sm:text-sm">
+                    {onViewSubmission && (
+                      <button
+                        onClick={() => onViewSubmission(submission._id)}
+                        className="text-blue-500 hover:text-blue-400 font-medium"
+                      >
+                        View
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ export interface DSASubtopic {
   id: string;
   name: string;
   description?: string;
+  problems?: Array<{ id: string; name: string }>;
 }
 
 export interface DSATopic {
@@ -18,8 +19,37 @@ export const dsaTopics: DSATopic[] = [
     id: 'arrays',
     name: 'Arrays',
     subtopics: [
-      { id: 'fundamentals', name: 'Fundamentals', description: 'Basic array operations and concepts' },
-      { id: 'logic-building', name: 'Logic Building', description: 'Build problem-solving logic' },
+      { 
+        id: 'fundamentals', 
+        name: 'Fundamentals', 
+        description: 'Basic array operations and concepts',
+        problems: [
+          { id: 'linear-search', name: 'Linear Search' },
+          { id: 'largest-element', name: 'Largest Element' },
+          { id: 'reverse-array', name: 'Reverse an Array' },
+          { id: 'find-minimum', name: 'Find Minimum Element' },
+          { id: 'count-frequency', name: 'Count Element Frequency' },
+          { id: 'sum-of-array', name: 'Sum of Array Elements' },
+          { id: 'second-largest-element', name: 'Second Largest Element' },
+          { id: 'check-array-sorted', name: 'Check if Array is Sorted' },
+          { id: 'maximum-consecutive-ones', name: 'Maximum Consecutive Ones' },
+          { id: 'left-rotate-array-one', name: 'Left Rotate Array by One' },
+          { id: 'left-rotate-array-k', name: 'Left Rotate Array by K Places' },
+        ]
+      },
+      { 
+        id: 'logic-building', 
+        name: 'Logic Building', 
+        description: 'Build problem-solving logic',
+        problems: [
+          { id: 'move-zeros-end', name: 'Move Zeros to End' },
+          { id: 'remove-duplicates-sorted', name: 'Remove Duplicates from Sorted Array' },
+          { id: 'find-missing-number', name: 'Find Missing Number' },
+          { id: 'union-sorted-arrays', name: 'Union of Two Sorted Arrays' },
+          { id: 'intersection-arrays', name: 'Intersection of Two Arrays' },
+          { id: 'single-number', name: 'Single Number' },
+        ]
+      },
     ]
   },
   {

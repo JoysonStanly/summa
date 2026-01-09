@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-import { type Slide } from "../../data/operatingSystem";
+import { type Slide } from "../data/subjects";
 
 interface SlideViewerProps {
   slides: Slide[];

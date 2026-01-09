@@ -71,6 +71,6 @@ const BugReportSchema: Schema = new Schema(
 // Indexes
 BugReportSchema.index({ status: 1 });
 BugReportSchema.index({ priority: 1 });
-BugReportSchema.index({ reportedBy: 1 });
+// reportedBy has index:true on field definition (no need to duplicate)
 
 export default mongoose.model<IBugReport>('BugReport', BugReportSchema);

@@ -1,96 +1,45 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bug, Filter, Search, Clock, CheckCircle, XCircle, AlertTriangle, User, Calendar } from 'lucide-react';
+import { Bug, Filter, Search, Clock, CheckCircle, XCircle, AlertTriangle, User, Calendar, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Sidebar from "@/shared/components/layout/Sidebar";
-
-interface BugReport {
-  id: string;
-  title: string;
-  description: string;
-  status: 'pending' | 'in-progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  reportedBy: string;
-  reportedAt: string;
-  assignedTo?: string;
-  module: string;
-}
+import { bugService, type BugPriority, type BugReport, type BugStatus } from '@/services/api/bugService';
 
 const AdminBuganizerPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<BugStatus | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<BugPriority | 'all'>('all');
+  const [bugs, setBugs] = useState<BugReport[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingBugId, setUpdatingBugId] = useState<string | null>(null);
 
-  // Mock data
-  const bugs: BugReport[] = [
-    {
-      id: 'BUG-001',
-      title: 'Code editor not saving changes',
-      description: 'When submitting code, changes are not being saved properly in the editor',
-      status: 'pending',
-      priority: 'critical',
-      reportedBy: 'john.doe@example.com',
-      reportedAt: '2025-12-24T10:30:00',
-      module: 'Code Editor'
-    },
-    {
-      id: 'BUG-002',
-      title: 'Progress chart not updating',
-      description: 'User progress chart shows outdated data even after completing problems',
-      status: 'in-progress',
-      priority: 'high',
-      reportedBy: 'jane.smith@example.com',
-      reportedAt: '2025-12-23T14:20:00',
-      assignedTo: 'dev-team',
-      module: 'Dashboard'
-    },
-    {
-      id: 'BUG-003',
-      title: 'Dark mode toggle not working on mobile',
-      description: 'Theme toggle button not responsive on mobile devices',
-      status: 'resolved',
-      priority: 'medium',
-      reportedBy: 'user123@example.com',
-      reportedAt: '2025-12-22T09:15:00',
-      assignedTo: 'dev-team',
-      module: 'UI/UX'
-    },
-    {
-      id: 'BUG-004',
-      title: 'Login redirect issue',
-      description: 'After login, users are redirected to wrong page',
-      status: 'pending',
-      priority: 'high',
-      reportedBy: 'test.user@example.com',
-      reportedAt: '2025-12-21T16:45:00',
-      module: 'Authentication'
-    },
-    {
-      id: 'BUG-005',
-      title: 'Editorial page loading slow',
-      description: 'Editorial content takes too long to load for some problems',
-      status: 'in-progress',
-      priority: 'medium',
-      reportedBy: 'student@example.com',
-      reportedAt: '2025-12-20T11:00:00',
-      assignedTo: 'dev-team',
-      module: 'Editorial'
-    },
-    {
-      id: 'BUG-006',
-      title: 'Syntax highlighting broken for Python',
-      description: 'Python code not showing proper syntax highlighting',
-      status: 'closed',
-      priority: 'low',
-      reportedBy: 'coder@example.com',
-      reportedAt: '2025-12-19T13:30:00',
-      assignedTo: 'dev-team',
-      module: 'Code Editor'
+  const fetchBugs = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await bugService.getBugReports({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        priority: priorityFilter !== 'all' ? priorityFilter : undefined,
+      });
+
+      setBugs(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load bug reports';
+      setError(message);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  }, [priorityFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchBugs();
+  }, [fetchBugs]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
+      case 'open':
         return <Clock size={18} className="text-yellow-400" />;
       case 'in-progress':
         return <AlertTriangle size={18} className="text-blue-400" />;
@@ -120,7 +69,7 @@ const AdminBuganizerPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
+      case 'open':
         return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
       case 'in-progress':
         return 'text-blue-400 bg-blue-500/10 border-blue-500/30';
@@ -133,25 +82,51 @@ const AdminBuganizerPage: React.FC = () => {
     }
   };
 
-  const handleStatusChange = (bugId: string, newStatus: string) => {
-    console.log(`Updating bug ${bugId} to status: ${newStatus}`);
-    // TODO: Implement API call to update bug status
+  const handleStatusChange = async (bugId: string, newStatus: BugStatus) => {
+    setUpdatingBugId(bugId);
+    setError(null);
+
+    try {
+      const updatedBug = await bugService.updateBugReport(bugId, { status: newStatus });
+      setBugs((prev) => prev.map((bug) => (bug._id === bugId ? updatedBug : bug)));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update bug status';
+      setError(message);
+    } finally {
+      setUpdatingBugId(null);
+    }
   };
 
-  const filteredBugs = bugs.filter(bug => {
-    const matchesSearch = bug.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          bug.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          bug.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || bug.status === statusFilter;
-    const matchesPriority = priorityFilter === 'all' || bug.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
+  const filteredBugs = useMemo(() => {
+    return bugs.filter((bug) => {
+      const matchesSearch = bug.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        bug.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        bug._id.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const stats = {
+      const matchesStatus = statusFilter === 'all' || bug.status === statusFilter;
+      const matchesPriority = priorityFilter === 'all' || bug.priority === priorityFilter;
+
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [bugs, priorityFilter, searchQuery, statusFilter]);
+
+  const stats = useMemo(() => ({
     total: bugs.length,
-    pending: bugs.filter(b => b.status === 'pending').length,
-    inProgress: bugs.filter(b => b.status === 'in-progress').length,
-    resolved: bugs.filter(b => b.status === 'resolved').length
+    open: bugs.filter((b) => b.status === 'open').length,
+    inProgress: bugs.filter((b) => b.status === 'in-progress').length,
+    resolved: bugs.filter((b) => b.status === 'resolved').length,
+    closed: bugs.filter((b) => b.status === 'closed').length,
+  }), [bugs]);
+
+  const formatReporter = (reportedBy: BugReport['reportedBy']) => {
+    if (!reportedBy) return 'Unknown reporter';
+    if (typeof reportedBy === 'string') return reportedBy;
+    return reportedBy.name || reportedBy.email || 'Unknown reporter';
+  };
+
+  const getBugCategory = (bug: BugReport) => {
+    if (bug.problemId?.title) return `Problem • ${bug.problemId.title}`;
+    return bug.category || 'General';
   };
 
   return (
@@ -165,11 +140,21 @@ const AdminBuganizerPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <div className="flex items-center gap-3 mb-2">
-              <Bug size={32} className="text-red-400" />
-              <h1 className="text-3xl font-bold">Buganizer</h1>
+            <div className="flex items-center justify-between mb-2">
+              <Link to="/admin" className="flex items-center gap-2 px-4 py-2 transition-colors rounded-lg hover:bg-zinc-800" title="Go back">
+                <ArrowLeft size={20} />
+              </Link>
+              <div className="flex-1 flex items-center justify-center gap-3">
+                <Bug size={32} className="text-red-400" />
+                <h1 className="text-3xl font-bold">Buganizer</h1>
+              </div>
+              <div className="w-[84px]"></div>
             </div>
-            <p className="text-gray-400">Review and manage bug reports from users</p>
+            {error && (
+              <div className="mt-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                {error}
+              </div>
+            )}
           </motion.div>
 
           {/* Stats */}
@@ -177,15 +162,15 @@ const AdminBuganizerPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-4 gap-4 mb-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6"
           >
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
               <div className="text-2xl font-bold text-white">{stats.total}</div>
               <div className="text-sm text-gray-400">Total Reports</div>
             </div>
             <div className="bg-[#1a1a1a] border border-yellow-500/20 rounded-xl p-4">
-              <div className="text-2xl font-bold text-yellow-400">{stats.pending}</div>
-              <div className="text-sm text-gray-400">Pending</div>
+              <div className="text-2xl font-bold text-yellow-400">{stats.open}</div>
+              <div className="text-sm text-gray-400">Open</div>
             </div>
             <div className="bg-[#1a1a1a] border border-blue-500/20 rounded-xl p-4">
               <div className="text-2xl font-bold text-blue-400">{stats.inProgress}</div>
@@ -194,6 +179,10 @@ const AdminBuganizerPage: React.FC = () => {
             <div className="bg-[#1a1a1a] border border-green-500/20 rounded-xl p-4">
               <div className="text-2xl font-bold text-green-400">{stats.resolved}</div>
               <div className="text-sm text-gray-400">Resolved</div>
+            </div>
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
+              <div className="text-2xl font-bold text-gray-300">{stats.closed}</div>
+              <div className="text-sm text-gray-400">Closed</div>
             </div>
           </motion.div>
 
@@ -224,11 +213,11 @@ const AdminBuganizerPage: React.FC = () => {
               {/* Status Filter */}
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => setStatusFilter(e.target.value as BugStatus | 'all')}
                 className="px-4 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white focus:outline-none focus:border-orange-500"
               >
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
+                <option value="open">Open</option>
                 <option value="in-progress">In Progress</option>
                 <option value="resolved">Resolved</option>
                 <option value="closed">Closed</option>
@@ -237,7 +226,7 @@ const AdminBuganizerPage: React.FC = () => {
               {/* Priority Filter */}
               <select
                 value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
+                onChange={(e) => setPriorityFilter(e.target.value as BugPriority | 'all')}
                 className="px-4 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white focus:outline-none focus:border-orange-500"
               >
                 <option value="all">All Priority</option>
@@ -256,7 +245,11 @@ const AdminBuganizerPage: React.FC = () => {
             transition={{ delay: 0.3 }}
             className="space-y-4"
           >
-            {filteredBugs.length === 0 ? (
+            {isLoading ? (
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-12 text-center text-gray-400">
+                Loading bug reports...
+              </div>
+            ) : filteredBugs.length === 0 ? (
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-12 text-center">
                 <Bug size={48} className="mx-auto mb-4 text-gray-600" />
                 <p className="text-gray-400">No bugs found matching your filters</p>
@@ -264,7 +257,7 @@ const AdminBuganizerPage: React.FC = () => {
             ) : (
               filteredBugs.map((bug, index) => (
                 <motion.div
-                  key={bug.id}
+                  key={bug._id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3 + index * 0.05 }}
@@ -278,20 +271,20 @@ const AdminBuganizerPage: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold">{bug.title}</h3>
-                          <span className="text-xs text-gray-500">{bug.id}</span>
+                          <span className="text-xs text-gray-500">{bug._id}</span>
                         </div>
                         <p className="text-gray-400 text-sm mb-3">{bug.description}</p>
                         <div className="flex items-center gap-4 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
                             <User size={14} />
-                            <span>{bug.reportedBy}</span>
+                            <span>{formatReporter(bug.reportedBy)}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar size={14} />
-                            <span>{new Date(bug.reportedAt).toLocaleDateString()}</span>
+                            <span>{new Date(bug.createdAt).toLocaleDateString()}</span>
                           </div>
                           <div className="px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-xs">
-                            {bug.module}
+                            {getBugCategory(bug)}
                           </div>
                         </div>
                       </div>
@@ -308,10 +301,11 @@ const AdminBuganizerPage: React.FC = () => {
                     </span>
                     <select
                       value={bug.status}
-                      onChange={(e) => handleStatusChange(bug.id, e.target.value)}
-                      className="px-3 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-sm text-white focus:outline-none focus:border-orange-500"
+                      onChange={(e) => handleStatusChange(bug._id, e.target.value as BugStatus)}
+                      disabled={updatingBugId === bug._id}
+                      className="px-3 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-sm text-white focus:outline-none focus:border-orange-500 disabled:opacity-60"
                     >
-                      <option value="pending">Pending</option>
+                      <option value="open">Open</option>
                       <option value="in-progress">In Progress</option>
                       <option value="resolved">Resolved</option>
                       <option value="closed">Closed</option>

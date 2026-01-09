@@ -57,6 +57,7 @@ const ProgressSchema: Schema = new Schema(
 );
 
 // Compound index to ensure unique progress per user-problem
+// Note: userId and problemId have index:true on field definitions
 ProgressSchema.index({ userId: 1, problemId: 1 }, { unique: true });
 
 export default mongoose.model<IProgress>('Progress', ProgressSchema);

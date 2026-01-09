@@ -1,13 +1,18 @@
 // Mock data for the Sessions page
 export interface Session {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   date: string; // ISO date string
-  timeRange: string; // e.g. "10:00 AM - 11:30 AM"
-  instructor: string;
-  thumbnailUrl: string;
-  category: string;
+  timeRange?: string; // e.g. "10:00 AM - 11:30 AM"
+  startTime?: string;
+  endTime?: string;
+  instructor?: string;
+  thumbnailUrl?: string;
+  category?: string;
   isLive?: boolean;
+  participants?: string[];
+  enrolledUsers?: string[];
 }
 
 // Upcoming sessions (empty for now to showcase the empty state)

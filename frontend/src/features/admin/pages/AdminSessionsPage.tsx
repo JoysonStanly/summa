@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Plus, Clock, Users, Video, Edit, Trash2, Filter, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Calendar, Plus, Clock, Users, Video, Edit, Trash2, Search, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import Sidebar from "@/shared/components/layout/Sidebar";
+import { sessionService } from '@/features/sessions/services/sessionService';
+import { useToast } from '@/shared/hooks/ToastContext';
 
 interface Session {
   id: string;
@@ -11,8 +13,8 @@ interface Session {
   instructor: string;
   date: string;
   time: string;
+  endTime: string;
   duration: number; // in minutes
-  type: 'live-coding' | 'bootcamp' | 'workshop' | 'webinar';
   maxParticipants: number;
   registeredCount: number;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
@@ -21,95 +23,123 @@ interface Session {
 
 const AdminSessionsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const { success: toastSuccess, error: toastError } = useToast();
 
-  // Mock data
-  const sessions: Session[] = [
-    {
-      id: 'SES-001',
-      title: 'Graph Algorithms Deep Dive',
-      description: 'Master graph algorithms including BFS, DFS, Dijkstra, and more',
-      instructor: 'Dr. Sarah Johnson',
-      date: '2025-12-26',
-      time: '18:00',
-      duration: 120,
-      type: 'live-coding',
-      maxParticipants: 100,
-      registeredCount: 78,
-      status: 'upcoming',
-      meetLink: 'https://meet.google.com/abc-defg-hij'
-    },
-    {
-      id: 'SES-002',
-      title: 'System Design Bootcamp',
-      description: 'Learn to design scalable systems from scratch',
-      instructor: 'John Smith',
-      date: '2025-12-28',
-      time: '10:00',
-      duration: 240,
-      type: 'bootcamp',
-      maxParticipants: 50,
-      registeredCount: 50,
-      status: 'upcoming',
-      meetLink: 'https://meet.google.com/xyz-abcd-efg'
-    },
-    {
-      id: 'SES-003',
-      title: 'Dynamic Programming Workshop',
-      description: 'Solve complex DP problems with proven strategies',
-      instructor: 'Dr. Sarah Johnson',
-      date: '2025-12-24',
-      time: '16:00',
-      duration: 90,
-      type: 'workshop',
-      maxParticipants: 80,
-      registeredCount: 65,
-      status: 'completed'
-    },
-    {
-      id: 'SES-004',
-      title: 'React Best Practices',
-      description: 'Modern React patterns and optimization techniques',
-      instructor: 'Emily Chen',
-      date: '2025-12-27',
-      time: '14:00',
-      duration: 60,
-      type: 'webinar',
-      maxParticipants: 200,
-      registeredCount: 145,
-      status: 'upcoming',
-      meetLink: 'https://meet.google.com/pqr-stuv-wxy'
-    },
-    {
-      id: 'SES-005',
-      title: 'Database Optimization',
-      description: 'Query optimization and indexing strategies',
-      instructor: 'John Smith',
-      date: '2025-12-23',
-      time: '11:00',
-      duration: 90,
-      type: 'workshop',
-      maxParticipants: 60,
-      registeredCount: 42,
-      status: 'completed'
-    }
-  ];
+  // Fetch sessions from API - refetch when location changes (e.g., navigating back from create/edit)
+  useEffect(() => {
+    fetchSessions();
+  }, [location.pathname]);
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'live-coding':
-        return 'text-blue-400 bg-blue-500/10 border-blue-500/30';
-      case 'bootcamp':
-        return 'text-purple-400 bg-purple-500/10 border-purple-500/30';
-      case 'workshop':
-        return 'text-orange-400 bg-orange-500/10 border-orange-500/30';
-      case 'webinar':
-        return 'text-green-400 bg-green-500/10 border-green-500/30';
-      default:
-        return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
+  const fetchSessions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await sessionService.getSessions(undefined, true);
+      
+      // Transform API data to match UI format
+      const transformedSessions: Session[] = data.map((session) => {
+        const now = new Date();
+        
+        // Extract start time from timeRange or startTime
+        let sessionTime = '00:00';
+        if ((session as any).timeRange) {
+          const timeRangeParts = (session as any).timeRange.split('-').map((t: string) => t.trim());
+          if (timeRangeParts.length > 0) {
+            sessionTime = timeRangeParts[0];
+          }
+        } else if (session.startTime) {
+          sessionTime = session.startTime;
+        }
+        
+        // Create a proper datetime by combining date and start time
+        const sessionDateOnly = session.date.split('T')[0]; // Get just the date part
+        const sessionDateTime = new Date(`${sessionDateOnly}T${sessionTime}:00`);
+        
+        // Determine status based on date and time
+        let status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' = 'upcoming';
+        if (session.status) {
+          status = session.status;
+        } else if (sessionDateTime < now) {
+          status = 'completed';
+        }
+        
+        // Extract time from timeRange or startTime
+        let time = '00:00';
+        let endTime = '01:00';
+        let duration = 60; // default
+        
+        if ((session as any).timeRange) {
+          // Parse timeRange string like "14:00 - 16:00"
+          const timeRangeParts = (session as any).timeRange.split('-').map((t: string) => t.trim());
+          if (timeRangeParts.length === 2) {
+            time = timeRangeParts[0];
+            endTime = timeRangeParts[1];
+            // Calculate duration
+            const [startHour, startMin] = time.split(':').map(Number);
+            const [endHour, endMin] = endTime.split(':').map(Number);
+            duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+          }
+        } else if (session.startTime) {
+          time = session.startTime;
+          // Calculate end time from duration
+          if (session.startTime) {
+            const [startHour, startMin] = session.startTime.split(':').map(Number);
+            const totalMinutes = startHour * 60 + startMin + duration;
+            const calcEndHour = Math.floor(totalMinutes / 60);
+            const calcEndMin = totalMinutes % 60;
+            endTime = `${String(calcEndHour).padStart(2, '0')}:${String(calcEndMin).padStart(2, '0')}`;
+          }
+          // Calculate duration from start and end time if available
+          if (session.startTime && session.endTime) {
+            const [startHour, startMin] = session.startTime.split(':').map(Number);
+            const [endHour, endMin] = session.endTime.split(':').map(Number);
+            duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+            endTime = session.endTime;
+          }
+        }
+        
+        // Determine type from tags or category
+        let type: 'live-coding' | 'bootcamp' | 'workshop' | 'webinar' = 'workshop';
+        if (session.tags && session.tags.length > 0) {
+          const tag = session.tags[0].toLowerCase();
+          if (tag.includes('live') || tag.includes('coding')) type = 'live-coding';
+          else if (tag.includes('bootcamp')) type = 'bootcamp';
+          else if (tag.includes('webinar')) type = 'webinar';
+        }
+        
+        return {
+          id: session._id,
+          title: session.title,
+          description: session.description,
+          instructor: typeof session.instructor === 'string' 
+            ? session.instructor 
+            : (session.instructor as any)?.name || 'Unknown',
+          date: session.date,
+          time: time,
+          endTime: endTime,
+          duration: duration,
+          type: type,
+          maxParticipants: session.maxParticipants || 100,
+          registeredCount: session.enrolledUsers?.length || 0,
+          status: status,
+          meetLink: session.meetingLink
+        };
+      });
+      
+      setSessions(transformedSessions);
+    } catch (err: any) {
+      console.error('Error fetching sessions:', err);
+      setError(err.message || 'Failed to fetch sessions');
+    } finally {
+      setLoading(false);
     }
   };
+
+  
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -126,20 +156,24 @@ const AdminSessionsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = (sessionId: string) => {
+  const handleDelete = async (sessionId: string) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
-      console.log(`Deleting session ${sessionId}`);
-      // TODO: Implement API call to delete session
+      try {
+        await sessionService.deleteSession(sessionId);
+        toastSuccess('Session deleted successfully!');
+        // Refresh sessions list after deletion
+        await fetchSessions();
+      } catch (err: any) {
+        const errorMessage = err.message || 'Failed to delete session';
+        toastError(errorMessage);
+      }
     }
   };
 
   const filteredSessions = sessions.filter(session => {
-    const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          session.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          session.instructor.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === 'all' || session.type === typeFilter;
-    const matchesStatus = statusFilter === 'all' || session.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
+    const matchesSearch = session.title.toLowerCase().includes(searchQuery.toLowerCase())
+                          
+    return matchesSearch;
   });
 
   const stats = {
@@ -161,97 +195,110 @@ const AdminSessionsPage: React.FC = () => {
             className="mb-8"
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <Calendar size={32} className="text-purple-400" />
-                <h1 className="text-3xl font-bold">Session Management</h1>
-              </div>
               <Link
-                to="/admin/sessions/new"
-                className="flex items-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 rounded-lg font-semibold transition-colors"
+                to="/admin"
+                className="flex items-center gap-2 px-4 py-2 transition-colors rounded-lg hover:bg-zinc-800"
+                title="Go back"
               >
-                <Plus size={20} />
-                Schedule Session
+                <ArrowLeft size={20} />
               </Link>
-            </div>
-            <p className="text-gray-400">Manage live sessions, bootcamps, and workshops</p>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-4 gap-4 mb-6"
-          >
-            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-              <div className="text-2xl font-bold text-white">{stats.total}</div>
-              <div className="text-sm text-gray-400">Total Sessions</div>
-            </div>
-            <div className="bg-[#1a1a1a] border border-blue-500/20 rounded-xl p-4">
-              <div className="text-2xl font-bold text-blue-400">{stats.upcoming}</div>
-              <div className="text-sm text-gray-400">Upcoming</div>
-            </div>
-            <div className="bg-[#1a1a1a] border border-gray-500/20 rounded-xl p-4">
-              <div className="text-2xl font-bold text-gray-400">{stats.completed}</div>
-              <div className="text-sm text-gray-400">Completed</div>
-            </div>
-            <div className="bg-[#1a1a1a] border border-green-500/20 rounded-xl p-4">
-              <div className="text-2xl font-bold text-green-400">{stats.totalRegistrations}</div>
-              <div className="text-sm text-gray-400">Total Registrations</div>
-            </div>
-          </motion.div>
-
-          {/* Filters */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <Filter size={20} className="text-orange-500" />
-              <h2 className="text-lg font-semibold">Filters</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search sessions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
-                />
+              <div className="flex-1 text-center">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <Calendar size={32} className="text-purple-400" />
+                  <h1 className="text-3xl font-bold">Session Management</h1>
+                </div>
               </div>
-
-              {/* Type Filter */}
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="px-4 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white focus:outline-none focus:border-orange-500"
-              >
-                <option value="all">All Types</option>
-                <option value="live-coding">Live Coding</option>
-                <option value="bootcamp">Bootcamp</option>
-                <option value="workshop">Workshop</option>
-                <option value="webinar">Webinar</option>
-              </select>
-
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white focus:outline-none focus:border-orange-500"
-              >
-                <option value="all">All Status</option>
-                <option value="upcoming">Upcoming</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/admin/sessions/new"
+                  className="flex items-center gap-2 px-6 py-3 font-semibold transition-colors bg-orange-500 rounded-lg hover:bg-orange-600"
+                >
+                  <Plus size={20} />
+                  Schedule Session
+                </Link>
+              </div>
             </div>
           </motion.div>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <Loader2 size={48} className="mx-auto mb-4 text-orange-500 animate-spin" />
+                <p className="text-gray-400">Loading sessions...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-6 mb-6 border bg-red-500/10 border-red-500/30 rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <AlertCircle size={24} className="text-red-400" />
+                <div>
+                  <h3 className="font-semibold text-red-400">Error Loading Sessions</h3>
+                  <p className="text-sm text-gray-400">{error}</p>
+                </div>
+              </div>
+              <button
+                onClick={fetchSessions}
+                className="px-4 py-2 mt-4 text-red-400 transition-colors border rounded-lg bg-red-500/20 hover:bg-red-500/30 border-red-500/30"
+              >
+                Try Again
+              </button>
+            </motion.div>
+          )}
+
+          {/* Show content only when not loading */}
+          {!loading && !error && (
+            <>
+              {/* Stats */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="grid grid-cols-4 gap-4 mb-6"
+              >
+                <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
+                  <div className="text-2xl font-bold text-white">{stats.total}</div>
+                  <div className="text-sm text-gray-400">Total Sessions</div>
+                </div>
+                <div className="bg-[#1a1a1a] border border-blue-500/20 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-blue-400">{stats.upcoming}</div>
+                  <div className="text-sm text-gray-400">Upcoming</div>
+                </div>
+                <div className="bg-[#1a1a1a] border border-gray-500/20 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-gray-400">{stats.completed}</div>
+                  <div className="text-sm text-gray-400">Completed</div>
+                </div>
+                <div className="bg-[#1a1a1a] border border-green-500/20 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-green-400">{stats.totalRegistrations}</div>
+                  <div className="text-sm text-gray-400">Total Registrations</div>
+                </div>
+              </motion.div>
+
+              {/* Search Bar */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mb-6"
+              >
+                <div className="relative">
+                  <Search size={18} className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search sessions by title, description, or instructor..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+              </motion.div>
 
           {/* Sessions List */}
           <motion.div
@@ -280,19 +327,15 @@ const AdminSessionsPage: React.FC = () => {
                         <h3 className="text-xl font-semibold">{session.title}</h3>
                         <span className="text-xs text-gray-500">{session.id}</span>
                       </div>
-                      <p className="text-gray-400 text-sm mb-3">{session.description}</p>
+                      <p className="mb-3 text-sm text-gray-400">{session.description}</p>
                       <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <div className="flex items-center gap-2">
-                          <Users size={16} />
-                          <span>{session.instructor}</span>
-                        </div>
                         <div className="flex items-center gap-2">
                           <Calendar size={16} />
                           <span>{new Date(session.date).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock size={16} />
-                          <span>{session.time} ({session.duration} min)</span>
+                          <span>{session.time} - {session.endTime}</span>
                         </div>
                         {session.meetLink && (
                           <div className="flex items-center gap-2">
@@ -310,9 +353,6 @@ const AdminSessionsPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${getTypeColor(session.type)}`}>
-                        {session.type.toUpperCase().replace('-', ' ')}
-                      </span>
                       <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${getStatusColor(session.status)}`}>
                         {session.status.toUpperCase()}
                       </span>
@@ -334,13 +374,13 @@ const AdminSessionsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/admin/sessions/${session.id}/edit`}
-                        className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-500/20 transition-colors"
+                        className="p-2 text-blue-400 transition-colors border rounded-lg bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20"
                       >
                         <Edit size={18} />
                       </Link>
                       <button
                         onClick={() => handleDelete(session.id)}
-                        className="p-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/20 transition-colors"
+                        className="p-2 text-red-400 transition-colors border rounded-lg bg-red-500/10 border-red-500/30 hover:bg-red-500/20"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -350,6 +390,8 @@ const AdminSessionsPage: React.FC = () => {
               ))
             )}
           </motion.div>
+            </>
+          )}
         </div>
       </div>
     </div>

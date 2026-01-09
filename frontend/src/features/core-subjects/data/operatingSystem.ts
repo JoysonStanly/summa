@@ -12,12 +12,14 @@ export interface Topic {
   videoUrl?: string;
   duration?: string;
   slides: Slide[];
+  problems?: { id: string; name: string; isCompleted?: boolean }[];
 }
 
 export interface Module {
   id: string;
   title: string;
   topics: Topic[];
+  problems?: { id: string; name: string; isCompleted?: boolean }[];
 }
 
 export interface Subject {
@@ -33,71 +35,12 @@ export const operatingSystemData: Subject = {
     {
       id: 'basics-of-operating-systems',
       title: 'Basics of Operating Systems',
+      problems: [
+        { id: 'operating-system-introduction', name: 'Operating System Introduction', isCompleted: false },
+        { id: 'process-program-thread', name: 'Process, Program, and Thread', isCompleted: false },
+        { id: 'types-of-operating-system', name: 'Types of Operating System', isCompleted: false }
+      ],
       topics: [
-        {
-          id: 'operating-system-introduction',
-          title: 'Operating System Introduction',
-          status: 'current',
-          videoUrl: '/videos/os-intro.mp4',
-          duration: '15:30',
-          slides: [
-            {
-              id: 'slide-1',
-              title: 'Operating System & Why it\'s Important',
-              content: 'An operating system (OS) is the core software that connects computer\'s hardware & software resources and its user.',
-              imageUrl: '/images/os-introduction-slide1.png'
-            },
-            {
-              id: 'slide-2',
-              title: 'Functions of Operating System',
-              content: 'Resource Management, Process Scheduling, Memory Management, File System Management',
-            },
-            {
-              id: 'slide-3',
-              title: 'Types of Operating Systems',
-              content: 'Batch OS, Time-sharing OS, Distributed OS, Real-time OS, Embedded OS',
-            },
-            {
-              id: 'slide-4',
-              title: 'Operating System Structure',
-              content: 'Kernel, System Calls, Device Drivers, File System',
-            },
-            {
-              id: 'slide-5',
-              title: 'Process Management',
-              content: 'Process creation, scheduling, synchronization, and termination',
-            },
-            {
-              id: 'slide-6',
-              title: 'Memory Management',
-              content: 'Virtual memory, paging, segmentation, and memory allocation',
-            },
-            {
-              id: 'slide-7',
-              title: 'File System',
-              content: 'File organization, directory structure, and file operations',
-            },
-            {
-              id: 'slide-8',
-              title: 'Summary & Next Steps',
-              content: 'Review key concepts and prepare for next topic on Process Management',
-            }
-          ]
-        },
-        {
-          id: 'process-program-thread',
-          title: 'Process, Program, and Thread',
-          status: 'completed',
-          duration: '12:45',
-          slides: []
-        },
-        {
-          id: 'types-of-operating-system',
-          title: 'Types of Operating System',
-          status: 'completed',
-          duration: '18:20',
-          slides: []
-        }
       ]
     },
     {

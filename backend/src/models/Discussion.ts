@@ -125,7 +125,7 @@ const DiscussionSchema: Schema = new Schema(
 
 // Indexes
 DiscussionSchema.index({ problemId: 1, createdAt: -1 });
-DiscussionSchema.index({ userId: 1 });
+// userId has index:true on field definition (no need to duplicate)
 DiscussionSchema.index({ category: 1 });
 
 export const Comment = mongoose.model<IComment>('Comment', CommentSchema);

@@ -184,3 +184,146 @@ const sendTokenResponse = (
     data: user,
   });
 };
+
+/**
+ * @desc    Get total users count
+ * @route   GET /api/v1/users/count
+ * @access  Public
+ */
+export const getTotalUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const count = await User.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      data: { count },
+    });
+  } catch (error: any) {
+    console.error('Get total users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user count',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get all users (Admin only)
+ * @route   GET /api/v1/auth/users
+ * @access  Private/Admin
+ */
+export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { role, status, search } = req.query;
+
+    // Build query
+    const query: any = {};
+    
+    if (role && role !== 'all') {
+      query.role = role;
+    }
+    
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const users = await User.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users,
+    });
+  } catch (error: any) {
+    console.error('Get all users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching users',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Update user (Admin only)
+ * @route   PUT /api/v1/auth/users/:id
+ * @access  Private/Admin
+ */
+export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Don't allow password updates through this endpoint
+    delete updateData.password;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error: any) {
+    console.error('Update user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Delete user (Admin only)
+ * @route   DELETE /api/v1/auth/users/:id
+ * @access  Private/Admin
+ */
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndDelete(id);
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting user',
+      error: error.message,
+    });
+  }
+};

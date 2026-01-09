@@ -267,3 +267,35 @@ export const unregisterFromSession = async (req: AuthRequest, res: Response): Pr
     });
   }
 };
+
+// @desc    Check if user is registered for session
+// @route   GET /api/v1/sessions/:id/is-registered
+// @access  Private
+export const checkRegistration = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const session = await Session.findById(req.params.id);
+
+    if (!session) {
+      res.status(404).json({
+        success: false,
+        message: 'Session not found',
+      });
+      return;
+    }
+
+    const isRegistered = req.user?._id 
+      ? session.participants.some(id => id.toString() === req.user!._id.toString())
+      : false;
+
+    res.status(200).json({
+      success: true,
+      data: { registered: isRegistered },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check registration status',
+      error: error.message,
+    });
+  }
+};

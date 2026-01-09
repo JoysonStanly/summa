@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { problemsApi } from '@/services/api/api';
 import { dsaTopics } from '../data/dsaTopics';
-import { problems as staticProblems } from '../data/problems';
 
 interface Problem {
   _id: string;
@@ -10,13 +9,6 @@ interface Problem {
   category?: string;
   subcategory?: string;
   difficulty?: string;
-}
-
-interface StaticProblem {
-  id: string;
-  topicId: string;
-  title: string;
-  difficulty: string;
 }
 
 interface SubtopicWithProblems {
@@ -46,32 +38,9 @@ export const useDSAProblems = () => {
         setLoading(true);
         setError(null);
         
-        let problemsData: Problem[] = [];
-        
-        // Try to fetch from backend
-        try {
-          const response = await problemsApi.getProblems();
-          problemsData = response?.data || response || [];
-        } catch {
-          console.warn('Backend API not available, using static problems data');
-          problemsData = [];
-        }
-        
-        // If backend is empty or unavailable, use static problems
-        if (problemsData.length === 0) {
-          console.log('Using static problems data as fallback');
-          // Map static problems to include in the structure
-          // Assume all static problems go to "fundamentals" subcategory
-          const staticProblemsList = (staticProblems as StaticProblem[]).map(p => ({
-            _id: p.id,
-            slug: p.id,
-            title: p.title,
-            category: p.topicId,
-            subcategory: 'fundamentals', // Default to fundamentals for static data
-            difficulty: p.difficulty
-          }));
-          problemsData = staticProblemsList;
-        }
+        // Fetch problems from backend
+        const response = await problemsApi.getProblems();
+        const problemsData: Problem[] = response?.data || response || [];
         
         // Group problems by their category and subcategory
         const problemsByCategory = groupProblemsByCategoryAndSubcategory(problemsData);
@@ -84,7 +53,8 @@ export const useDSAProblems = () => {
           subtopics: topic.subtopics.map(subtopic => ({
             id: subtopic.id,
             name: subtopic.name,
-            problems: problemsByCategory.get(`${topic.id}:${subtopic.id}`) || [] // Use backend problems if they exist
+            // Use problems from dsaTopics.ts if they exist, otherwise use backend problems
+            problems: subtopic.problems || problemsByCategory.get(`${topic.id}:${subtopic.id}`) || []
           }))
         }));
         
@@ -94,14 +64,14 @@ export const useDSAProblems = () => {
         console.error('Failed to fetch DSA problems:', error);
         setError(error.message || 'Failed to load problems');
         
-        // Fallback: show all topics with no problems
+        // Fallback: show all topics with problems from dsaTopics.ts
         setTopics(dsaTopics.map(topic => ({
           id: topic.id,
           name: topic.name,
           subtopics: topic.subtopics.map(subtopic => ({
             id: subtopic.id,
             name: subtopic.name,
-            problems: []
+            problems: subtopic.problems || []
           }))
         })));
       } finally {

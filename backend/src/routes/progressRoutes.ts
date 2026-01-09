@@ -7,6 +7,8 @@ import {
   getMyProgress,
   getMyStats,
   createProgress,
+  getCheckedProblems,
+  uncheckProblem, // NEW
 } from '../controllers/progressController';
 import { protect } from '../middleware/auth';
 
@@ -60,5 +62,19 @@ router.get('/streak/:userId', protect, getUserStreak);
  * @access  Private
  */
 router.put('/', protect, updateProgress);
+
+/**
+ * @route   GET /api/v1/progress/checked
+ * @desc    Get user's checked problems for today
+ * @access  Private
+ */
+router.get('/checked', protect, getCheckedProblems);
+
+/**
+ * @route   POST /api/v1/progress/uncheck
+ * @desc    Uncheck a problem (remove from daily checked problems)
+ * @access  Private
+ */
+router.post('/uncheck', protect, uncheckProblem);
 
 export default router;

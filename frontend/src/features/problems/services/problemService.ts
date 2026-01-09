@@ -3,23 +3,61 @@ import api from '@/services/api/axiosClient';
 // Types
 export interface Problem {
   _id: string;
-  id: string;
+  id: string; // slug
+  slug: string;
   title: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  topic: string;
+  category: string;
+  tags: string[];
+  
+  // Metadata
+  submissionCount: number;
+  acceptanceRate: number;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Content (from JSON) - legacy support
+  topic?: string;
   subtopic?: string;
-  description: string;
+  description?: string; // Alias for statement
+  
+  // Content (from JSON) - new structure
+  statement?: string;
   examples?: Array<{
     input: string;
     output: string;
     explanation?: string;
   }>;
   constraints?: string[];
+  hints?: string[];
   starterCode?: Record<string, string>;
-  testCases?: any[];
+  testCases?: Array<{
+    id?: string; // Generated from testCaseNumber
+    testCaseNumber: number;
+    input: string[];
+    output: string;
+    explanation?: string;
+    isHidden: boolean;
+    weight: number;
+  }>;
   companies?: string[];
   acceptance?: number;
-  editorial?: any;
+  editorial?: {
+    sections: Array<{
+      title: string;
+      content: string;
+    }>;
+    solutions: Record<string, string>; // Language name -> code string
+    timeComplexity: string;
+    spaceComplexity: string;
+    dryRunImages?: Array<{
+      id: string;
+      src: string;
+      alt: string;
+    }>;
+    videoUrl?: string;
+    hasVideo: boolean;
+  };
 }
 
 export interface ProblemFilters {
@@ -64,14 +102,34 @@ export const problemService = {
     }
   },
 
-  // Get single problem by ID
+  // Get single problem by ID or slug
   async getProblem(id: string): Promise<Problem> {
     try {
-      const response = await api.get<{ success: boolean; data: Problem }>(`/problems/${id}`);
-      return response.data.data;
+      // Fetch from backend
+      const response = await api.get<{ success: boolean; data: any }>(`/problems/${id}`);
+      const backendProblem = response.data.data;
+      
+      // Transform backend format to frontend format
+      return {
+        ...backendProblem,
+        id: backendProblem.slug || backendProblem._id,
+        description: backendProblem.statement || backendProblem.description,
+        topic: backendProblem.category || backendProblem.topic,
+        // Ensure all required fields have defaults
+        submissionCount: backendProblem.submissionCount || 0,
+        acceptanceRate: backendProblem.acceptanceRate || 0,
+        tags: backendProblem.tags || [],
+        createdAt: backendProblem.createdAt || new Date().toISOString(),
+        updatedAt: backendProblem.updatedAt || new Date().toISOString(),
+        // Transform testCases to have id field for frontend components
+        testCases: backendProblem.testCases?.map((tc: any) => ({
+          ...tc,
+          id: `test-${tc.testCaseNumber}`
+        })),
+      };
     } catch (error: any) {
       console.error('Error fetching problem:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch problem');
+      throw new Error(error.response?.data?.message || `Problem with id "${id}" not found`);
     }
   },
 
@@ -151,3 +209,5 @@ export const problemService = {
     }
   },
 };
+
+export default problemService;

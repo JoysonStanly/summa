@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, ArrowLeft, Save } from 'lucide-react';
+import { Calendar, ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from "@/shared/components/layout/Sidebar";
+import { sessionService } from '@/features/sessions/services/sessionService';
+import { useToast } from '@/shared/hooks/ToastContext';
 
 const AddSessionPage: React.FC = () => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { success: toastSuccess, error: toastError } = useToast();
 
   // Form state
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
     thumbnailUrl: '',
     date: '',
     time: '',
@@ -32,25 +35,60 @@ const AddSessionPage: React.FC = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.title.trim() || !formData.date || !formData.time || !formData.endTime) {
-      alert('Please fill in all required fields');
+    if (!formData.title.trim() || !formData.date || !formData.time || !formData.endTime || !formData.meetLink.trim()) {
+      setError('Please fill in all required fields (Title, Date, Times, and Meet Link are required)');
+      toastError('Please fill in all required fields');
       return;
     }
 
     // Validate end time is after start time
     if (formData.time && formData.endTime && formData.time >= formData.endTime) {
-      alert('End time must be after start time');
+      setError('End time must be after start time');
+      toastError('End time must be after start time');
       return;
     }
 
     setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Creating session:', formData);
-      alert('Session scheduled successfully!');
-      setIsSaving(false);
+    setError(null);
+    
+    try {
+      // Calculate duration in minutes
+      const [startHour, startMin] = formData.time.split(':').map(Number);
+      const [endHour, endMin] = formData.endTime.split(':').map(Number);
+      const duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+
+      // Create a proper datetime object in local timezone
+      // This ensures the date is stored with the correct timezone offset
+      const sessionDateTime = new Date(`${formData.date}T${formData.time}:00`);
+
+      // Prepare session data for API matching backend model
+      const sessionData = {
+        title: formData.title,
+        description: 'Session details', // Default description
+        category: 'workshop', // Default category
+        date: sessionDateTime.toISOString(), // Send as ISO string with timezone
+        timeRange: `${formData.time} - ${formData.endTime}`,
+        duration: duration,
+        meetLink: formData.meetLink,
+        thumbnailUrl: formData.thumbnailUrl || '',
+        videoRecordingUrl: formData.recordedVideoUrl || '',
+        maxParticipants: 100,
+        tags: ['session'],
+        isLive: false
+      };
+
+      await sessionService.createSession(sessionData as any);
+      
+      // Success - show toast and navigate back to sessions page
+      toastSuccess('Session scheduled successfully!');
       navigate('/admin/sessions');
-    }, 1500);
+    } catch (err: any) {
+      console.error('Error creating session:', err);
+      const errorMessage = err.message || 'Failed to create session. Please try again.';
+      setError(errorMessage);
+      toastError(errorMessage);
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -85,6 +123,16 @@ const AddSessionPage: React.FC = () => {
             transition={{ delay: 0.1 }}
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8"
           >
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title */}
               <div>
@@ -100,22 +148,6 @@ const AddSessionPage: React.FC = () => {
                   placeholder="e.g., Amazon Interview Experience with Mridul SDE-1"
                   className="w-full px-4 py-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
                   required
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium mb-2">
-                  Description (Optional)
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Describe what will be covered in this session... (optional)"
-                  rows={4}
-                  className="w-full px-4 py-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 resize-none"
                 />
               </div>
 
@@ -207,7 +239,7 @@ const AddSessionPage: React.FC = () => {
               {/* Meet Link */}
               <div>
                 <label htmlFor="meetLink" className="block text-sm font-medium mb-2">
-                  Meeting Link (Optional)
+                  Meeting Link <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="meetLink"
@@ -217,8 +249,9 @@ const AddSessionPage: React.FC = () => {
                   onChange={handleChange}
                   placeholder="https://meet.google.com/abc-defg-hij"
                   className="w-full px-4 py-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                  required
                 />
-                <p className="text-xs text-gray-500 mt-1">Add this now or update it later</p>
+                <p className="text-xs text-gray-500 mt-1">Google Meet, Zoom, or other video conferencing link</p>
               </div>
 
               {/* Recorded Video URL */}
@@ -272,7 +305,6 @@ const AddSessionPage: React.FC = () => {
                           {formData.time} - {formData.endTime}
                         </p>
                       )}
-                      {formData.description && <p className="text-sm text-gray-400 mb-3">{formData.description}</p>}
                       {formData.recordedVideoUrl && (
                         <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-green-400 text-xs">
                           🎥 Recorded video available
@@ -292,7 +324,15 @@ const AddSessionPage: React.FC = () => {
                 >
                   {isSaving ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span className="flex gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <span
+                            key={i}
+                            className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
+                            style={{ animationDelay: `${i * 0.15}s` }}
+                          />
+                        ))}
+                      </span>
                       Scheduling...
                     </>
                   ) : (

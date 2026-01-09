@@ -13,10 +13,15 @@ import {
   CheckCircle2,
   Github,
   Linkedin,
-  Twitter
+  Twitter,
+  LayoutDashboard
 } from 'lucide-react';
+import { useAuth } from '@/features/auth/stores/AuthContext';
+import { UserDropdown } from '@/shared/components/ui';
 
 const LandingPage = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+
   const features = [
     {
       icon: Code2,
@@ -74,19 +79,44 @@ const LandingPage = () => {
                 StudyIO
               </span>
             </div>
+            
+            {/* Center - Dashboard button (only when logged in) */}
+            {isAuthenticated() && (
+              <div className="absolute left-1/2 transform -translate-x-1/2">
+                <Link
+                  to="/home"
+                  className="group flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#252525] text-white text-sm px-5 py-2 rounded-lg font-medium transition-all duration-200 border border-[#3a3a3a] hover:border-orange-500/50 hover:shadow-[0_0_12px_rgba(249,115,22,0.15)]"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-orange-500 transition-colors group-hover:text-orange-400" />
+                  <span>Dashboard</span>
+                </Link>
+              </div>
+            )}
+            
             <div className="flex items-center gap-4">
-              <Link 
-                to="/login" 
-                className="px-4 py-2 text-white/80 hover:text-white transition-colors duration-300"
-              >
-                Login
-              </Link>
-              <Link 
-                to="/signup" 
-                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition-all"
-              >
-                Get Started
-              </Link>
+              {isAuthenticated() ? (
+                <UserDropdown 
+                  user={user} 
+                  onLogout={logout} 
+                  position="bottom-right"
+                  avatarSize="md"
+                />
+              ) : (
+                <>
+                  <Link 
+                    to="/login" 
+                    className="px-4 py-2 text-white/80 hover:text-white transition-colors duration-300"
+                  >
+                    Login
+                  </Link>
+                  <Link 
+                    to="/signup" 
+                    className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -10,10 +10,12 @@ import Card from './Card';
 import Breadcrumbs from './Breadcrumbs';
 import ProgressCircle from './ProgressCircle';
 import ThemeToggle from './ThemeToggle';
+import UserDropdown from './UserDropdown';
 
 export {
   Card,
   Breadcrumbs,
   ProgressCircle,
-  ThemeToggle
+  ThemeToggle,
+  UserDropdown
 };

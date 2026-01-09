@@ -68,12 +68,9 @@ const progressService = {
    * Update user progress for a problem
    */
   updateProgress: async (data: {
-    userId: string;
-    problemId: string;
-    completed?: boolean;
-    timeSpent?: number;
-    submissionId?: string;
-  }): Promise<ProgressRecord> => {
+    action: 'solved' | 'attempted' | 'streak';
+    problemId?: string;
+  }): Promise<any> => {
     const response = await api.post('/progress', data);
     return response.data.data;
   },

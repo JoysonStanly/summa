@@ -4,7 +4,6 @@ import DSAProgress from './DSAProgress';
 import OtherSubjects from './OtherSubjects';
 import SubmissionsHeatmap from './SubmissionsHeatmap';
 import RecentlyCompleted from './RecentlyCompleted';
-import UserStreak from '../UserStreak';
 
 export {
   ProfileTopBar,
@@ -12,6 +11,5 @@ export {
   DSAProgress,
   OtherSubjects,
   SubmissionsHeatmap,
-  RecentlyCompleted,
-  UserStreak
+  RecentlyCompleted
 };
