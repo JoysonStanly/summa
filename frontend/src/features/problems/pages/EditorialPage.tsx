@@ -1,6 +1,6 @@
 import { FC, useState } from 'react'
 import { FileText, BookOpen, Clock, ChevronLeft } from 'lucide-react'
-import { Editorial } from '../components/editorial'
+import { Editorial } from '../editorial'
 
 // ✅ Main editorial page component
 const EditorialPage: FC = () => {

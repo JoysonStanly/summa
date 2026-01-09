@@ -10,6 +10,7 @@ import {
   updateUser,
   deleteUser
 } from '../controllers/authController';
+import { setupInitialAdmin } from '../controllers/setupController';
 import { protect, authorize } from '../middleware/auth';
 import { registerValidation, loginValidation } from '../middleware/validation';
 import { Request, Response, NextFunction } from 'express';
@@ -37,6 +38,13 @@ const validate = (req: Request, res: Response, next: NextFunction): void => {
  * @access  Public
  */
 router.post('/register', registerValidation, validate, register);
+
+/**
+ * @route   POST /api/v1/auth/setup-admin
+ * @desc    Setup initial admin user (only works if no admin exists)
+ * @access  Public (but requires setup secret)
+ */
+router.post('/setup-admin', setupInitialAdmin);
 
 /**
  * @route   POST /api/v1/auth/login

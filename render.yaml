@@ -1,0 +1,24 @@
+{
+  "$schema": "https://render.com/schema/v1",
+  "services": [
+    {
+      "type": "web",
+      "name": "studyio-backend",
+      "env": "node",
+      "region": "oregon",
+      "buildCommand": "cd backend && npm install && npm run build",
+      "startCommand": "cd backend && npm start",
+      "envVars": [
+        {
+          "key": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "key": "PORT",
+          "value": "5000"
+        }
+      ],
+      "healthCheckPath": "/health"
+    }
+  ]
+}

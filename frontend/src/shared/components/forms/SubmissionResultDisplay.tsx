@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SubmissionResult, SubmissionStatus } from '../../services/submissionService';
+import type { SubmissionResult, SubmissionStatus } from '@/features/problems/services/submissionService';
 
 interface SubmissionResultDisplayProps {
   result: SubmissionResult;

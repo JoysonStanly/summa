@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import submissionService from '../../services/submissionService';
-import type { Submission, SubmissionStatus } from '../../services/submissionService';
+import submissionService from '@/features/problems/services/submissionService';
+import type { Submission, SubmissionStatus } from '@/features/problems/services/submissionService';
 
 interface SubmissionHistoryProps {
   problemId: string;
@@ -131,7 +131,6 @@ const SubmissionHistory: React.FC<SubmissionHistoryProps> = ({
       {/* Scrollable Table Container */}
       <div className="submission-scroll-container">
         <div className="submission-scroll-wrapper border border-gray-700 rounded-lg">
-          <table className="submission-table w-full divide-y divide-gray-700">
           <table className="submission-table w-full divide-y divide-gray-700">
             <thead className="bg-[#2d2d2d]">
               <tr>

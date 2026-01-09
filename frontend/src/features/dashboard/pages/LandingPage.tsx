@@ -69,10 +69,10 @@ const LandingPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-[#0f0f0f] via-[#1a1a1a] to-[#0f0f0f] text-white">
       {/* Navigation */}
       <nav className="fixed left-0 right-0 z-50 flex justify-center mt-4">
-        <div className="w-full max-w-7xl mx-4">
+        <div className="w-full mx-4 max-w-7xl">
           <div className="flex justify-between items-center px-4 py-2.5 border border-white/10 bg-black/20 backdrop-blur-xl rounded-full">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500">
                 <Code2 className="w-6 h-6 text-white" />
               </div>
               <span className="text-xl font-bold text-white">
@@ -82,7 +82,7 @@ const LandingPage = () => {
             
             {/* Center - Dashboard button (only when logged in) */}
             {isAuthenticated() && (
-              <div className="absolute left-1/2 transform -translate-x-1/2">
+              <div className="absolute transform -translate-x-1/2 left-1/2">
                 <Link
                   to="/home"
                   className="group flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#252525] text-white text-sm px-5 py-2 rounded-lg font-medium transition-all duration-200 border border-[#3a3a3a] hover:border-orange-500/50 hover:shadow-[0_0_12px_rgba(249,115,22,0.15)]"
@@ -105,13 +105,13 @@ const LandingPage = () => {
                 <>
                   <Link 
                     to="/login" 
-                    className="px-4 py-2 text-white/80 hover:text-white transition-colors duration-300"
+                    className="px-4 py-2 transition-colors duration-300 text-white/80 hover:text-white"
                   >
                     Login
                   </Link>
                   <Link 
                     to="/signup" 
-                    className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-full font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                    className="px-6 py-2 font-semibold transition-all rounded-full bg-gradient-to-r from-orange-500 to-red-500 hover:shadow-lg hover:shadow-orange-500/50"
                   >
                     Get Started
                   </Link>
@@ -123,38 +123,38 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-36 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section className="px-6 pb-20 pt-36">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 border rounded-full bg-orange-500/10 border-orange-500/20">
               <Sparkles className="w-4 h-4 text-orange-500" />
-              <span className="text-sm text-orange-500 font-medium">Your Complete Interview Prep Platform</span>
+              <span className="text-sm font-medium text-orange-500">Your Complete Interview Prep Platform</span>
             </div>
             
-            <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight">
-              Master <span className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent">
+            <h1 className="mb-6 text-6xl font-bold leading-tight md:text-7xl">
+              Master <span className="text-transparent bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text">
                 Tech Interviews
               </span>
               <br />
               with Confidence
             </h1>
             
-            <p className="text-xl text-gray-400 mb-10 max-w-3xl mx-auto">
+            <p className="max-w-3xl mx-auto mb-10 text-xl text-gray-400">
               Learn DSA, System Design, and Core CS Subjects with personalised roadmaps, expert videos, and practice built for results.
             </p>
 
             <div className="flex items-center justify-center gap-4 mb-16">
               <Link 
                 to="/signup"
-                className="group px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg font-semibold text-lg hover:shadow-xl hover:shadow-orange-500/50 transition-all flex items-center gap-2"
+                className="flex items-center gap-2 px-8 py-4 text-lg font-semibold transition-all rounded-lg group bg-gradient-to-r from-orange-500 to-red-500 hover:shadow-xl hover:shadow-orange-500/50"
               >
                 Start Learning
-                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </motion.div>
@@ -162,23 +162,23 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="mb-16 text-center"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="mb-4 text-4xl font-bold md:text-5xl">
               Everything You Need to <span className="text-orange-500">Succeed</span>
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p className="max-w-2xl mx-auto text-xl text-gray-400">
               A complete learning ecosystem designed to take you from basics to advanced
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid gap-8 md:grid-cols-2">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -191,10 +191,10 @@ const LandingPage = () => {
                 <div className={`inline-flex p-4 rounded-xl bg-gradient-to-br ${feature.gradient} mb-4`}>
                   <feature.icon className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold mb-3 group-hover:text-orange-500 transition-colors">
+                <h3 className="mb-3 text-2xl font-bold transition-colors group-hover:text-orange-500">
                   {feature.title}
                 </h3>
-                <p className="text-gray-400 leading-relaxed">
+                <p className="leading-relaxed text-gray-400">
                   {feature.description}
                 </p>
               </motion.div>
@@ -204,18 +204,18 @@ const LandingPage = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 px-6 bg-gradient-to-r from-orange-500/5 to-red-500/5">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+      <section className="px-6 py-20 bg-gradient-to-r from-orange-500/5 to-red-500/5">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid items-center gap-12 md:grid-cols-2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <h2 className="mb-6 text-4xl font-bold md:text-5xl">
                 Why <span className="text-orange-500">StudyIO</span>?
               </h2>
-              <p className="text-xl text-gray-400 mb-8">
+              <p className="mb-8 text-xl text-gray-400">
                 Join thousands of developers who have transformed their coding skills and landed their dream jobs.
               </p>
               <div className="space-y-4">
@@ -228,7 +228,7 @@ const LandingPage = () => {
                     transition={{ delay: index * 0.1 }}
                     className="flex items-start gap-3"
                   >
-                    <CheckCircle2 className="w-6 h-6 text-orange-500 flex-shrink-0 mt-1" />
+                    <CheckCircle2 className="flex-shrink-0 w-6 h-6 mt-1 text-orange-500" />
                     <span className="text-lg text-gray-300">{benefit}</span>
                   </motion.div>
                 ))}
@@ -241,44 +241,44 @@ const LandingPage = () => {
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="bg-gradient-to-br from-orange-500/5 to-red-500/5 border border-orange-500/20 rounded-3xl p-8 backdrop-blur-sm">
+              <div className="p-8 border bg-gradient-to-br from-orange-500/5 to-red-500/5 border-orange-500/20 rounded-3xl backdrop-blur-sm">
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4 p-4 bg-black/20 rounded-xl border border-white/5">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                  <div className="flex items-center gap-4 p-4 border bg-black/20 rounded-xl border-white/5">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500">
                       <Zap className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Lightning Fast Progress</h4>
+                      <h4 className="font-semibold text-white">Lightning Fast Progress</h4>
                       <p className="text-sm text-gray-400">Learn at your own pace with structured roadmaps</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 p-4 bg-black/20 rounded-xl border border-white/5">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <div className="flex items-center gap-4 p-4 border bg-black/20 rounded-xl border-white/5">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500">
                       <Target className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Expert-Crafted Content</h4>
+                      <h4 className="font-semibold text-white">Expert-Crafted Content</h4>
                       <p className="text-sm text-gray-400">Industry professionals design every course</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 p-4 bg-black/20 rounded-xl border border-white/5">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <div className="flex items-center gap-4 p-4 border bg-black/20 rounded-xl border-white/5">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
                       <Trophy className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Real Interview Experience</h4>
+                      <h4 className="font-semibold text-white">Real Interview Experience</h4>
                       <p className="text-sm text-gray-400">Practice with questions from top companies</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 p-4 bg-black/20 rounded-xl border border-white/5">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                  <div className="flex items-center gap-4 p-4 border bg-black/20 rounded-xl border-white/5">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500">
                       <Users className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Active Community</h4>
+                      <h4 className="font-semibold text-white">Active Community</h4>
                       <p className="text-sm text-gray-400">Join thousands of learners worldwide</p>
                     </div>
                   </div>
@@ -290,25 +290,25 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6">
+      <section className="px-6 py-20">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl p-12 text-center relative overflow-hidden"
+            className="relative p-12 overflow-hidden text-center bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl"
           >
             <div className="absolute inset-0 bg-grid-white/10" />
             <div className="relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              <h2 className="mb-4 text-4xl font-bold md:text-5xl">
                 Ready to Start Your Journey?
               </h2>
-              <p className="text-xl mb-8 text-white/90">
+              <p className="mb-8 text-xl text-white/90">
                 Join StudyIO today and ace your next coding interview
               </p>
               <Link
                 to="/signup"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-orange-500 rounded-lg font-semibold text-lg hover:shadow-xl transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 text-lg font-semibold text-orange-500 transition-all bg-white rounded-lg hover:shadow-xl"
               >
                 Create Account
                 <ChevronRight className="w-5 h-5" />
@@ -320,50 +320,50 @@ const LandingPage = () => {
 
       {/* Footer */}
       <footer className="border-t border-[#2a2a2a] py-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 mb-8 md:grid-cols-4">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-500">
                   <Code2 className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold">StudyIO</span>
               </div>
-              <p className="text-gray-400 text-sm">
+              <p className="text-sm text-gray-400">
                 Your complete platform for coding interview preparation
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Learn</h4>
+              <h4 className="mb-4 font-semibold">Learn</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link to="/dsa" className="hover:text-orange-500 transition-colors">DSA</Link></li>
-                <li><Link to="/core-subjects" className="hover:text-orange-500 transition-colors">Core Subjects</Link></li>
-                <li><Link to="/aptitude" className="hover:text-orange-500 transition-colors">Aptitude</Link></li>
-                <li><Link to="/mock-tests" className="hover:text-orange-500 transition-colors">Mock Tests</Link></li>
+                <li><Link to="/dsa" className="transition-colors hover:text-orange-500">DSA</Link></li>
+                <li><Link to="/core-subjects" className="transition-colors hover:text-orange-500">Core Subjects</Link></li>
+                <li><Link to="/aptitude" className="transition-colors hover:text-orange-500">Aptitude</Link></li>
+                <li><Link to="/mock-tests" className="transition-colors hover:text-orange-500">Mock Tests</Link></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
+              <h4 className="mb-4 font-semibold">Company</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-orange-500 transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-orange-500 transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-orange-500 transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-orange-500 transition-colors">Contact</a></li>
+                <li><a href="#" className="transition-colors hover:text-orange-500">About</a></li>
+                <li><a href="#" className="transition-colors hover:text-orange-500">Careers</a></li>
+                <li><a href="#" className="transition-colors hover:text-orange-500">Blog</a></li>
+                <li><a href="#" className="transition-colors hover:text-orange-500">Contact</a></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Connect</h4>
+              <h4 className="mb-4 font-semibold">Connect</h4>
               <div className="flex gap-3">
-                <a href="#" className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center hover:bg-orange-500 transition-colors">
+                <a href="#" className="flex items-center justify-center w-10 h-10 transition-colors rounded-lg bg-white/5 hover:bg-orange-500">
                   <Github className="w-5 h-5" />
                 </a>
-                <a href="#" className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center hover:bg-orange-500 transition-colors">
+                <a href="#" className="flex items-center justify-center w-10 h-10 transition-colors rounded-lg bg-white/5 hover:bg-orange-500">
                   <Linkedin className="w-5 h-5" />
                 </a>
-                <a href="#" className="w-10 h-10 bg-white/5 rounded-lg flex items-center justify-center hover:bg-orange-500 transition-colors">
+                <a href="#" className="flex items-center justify-center w-10 h-10 transition-colors rounded-lg bg-white/5 hover:bg-orange-500">
                   <Twitter className="w-5 h-5" />
                 </a>
               </div>
@@ -371,10 +371,10 @@ const LandingPage = () => {
           </div>
           
           <div className="border-t border-[#2a2a2a] pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400">
-            <p>&copy; 2025 StudyIO. All rights reserved.</p>
+            <p>&copy; 2026 StudyIO. All rights reserved.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-orange-500 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-orange-500 transition-colors">Terms of Service</a>
+              <a href="#" className="transition-colors hover:text-orange-500">Privacy Policy</a>
+              <a href="#" className="transition-colors hover:text-orange-500">Terms of Service</a>
             </div>
           </div>
         </div>

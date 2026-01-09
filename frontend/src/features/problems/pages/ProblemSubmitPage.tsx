@@ -3,9 +3,9 @@ import { useToast } from '@/shared/hooks/ToastContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { AuthContext } from "@/features/auth/stores/AuthContext";
-import { CodeSubmissionForm } from '../components/submissions/CodeSubmissionForm';
-import { SubmissionHistory } from '../components/submissions/SubmissionHistory';
-import { SubmissionResultDisplay } from '../components/submissions/SubmissionResultDisplay';
+import { CodeSubmissionForm } from '@/shared/components/forms/CodeSubmissionForm';
+import { SubmissionHistory } from '@/shared/components/forms/SubmissionHistory';
+import { SubmissionResultDisplay } from '@/shared/components/forms/SubmissionResultDisplay';
 import submissionService from '../services/submissionService';
 import type { SubmissionResult, Submission } from '../services/submissionService';
 
