@@ -163,7 +163,7 @@ const Sidebar: FC<SidebarProps> = ({ activePage }) => {
             {/* Menu Items */}
             <div className="py-1">
               <Link 
-                to="/profile" 
+                to={`/profile/${user?.name || 'User'}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between w-full gap-2 px-3 py-2 text-sm text-white transition-all cursor-pointer hover:bg-[#2a2a2a] hover:translate-x-1"

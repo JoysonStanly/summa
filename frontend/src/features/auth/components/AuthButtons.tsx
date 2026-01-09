@@ -21,7 +21,7 @@ export const AuthButtons = () => {
       {user ? (
         <div className="flex items-center space-x-4">
           <Link 
-            to="/profile" 
+            to={`/profile/${user.name}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-400 hover:text-blue-300"
