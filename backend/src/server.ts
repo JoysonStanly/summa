@@ -49,6 +49,9 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173',
   'http://localhost:5173',
   'http://localhost:5174',
+  'https://studyio-frontend.onrender.com', // Render frontend
+  'https://studyio.in', // Custom domain
+  'https://www.studyio.in', // WWW variant
 ];
 
 app.use(
