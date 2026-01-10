@@ -1,64 +1,64 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { ThemeProvider } from '@/shared/hooks/ThemeContext'
-import { AuthProvider } from '@/features/auth/components/AuthProvider'
-import { ToastProvider } from '@/shared/hooks/ToastContext'
-import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
+import { ThemeProvider } from '@shared/contexts/ThemeContext'
+import { AuthProvider } from '@features/auth/components/AuthProvider'
+import { ToastProvider } from '@shared/contexts/ToastContext'
+import { ProtectedRoute } from '@features/auth/components/ProtectedRoute'
 
 // Auth pages
-import LoginPage from '@/features/auth/pages/LoginPage'
-import SignupPage from '@/features/auth/pages/SignupPage'
-import UnauthorizedPage from '@/features/auth/pages/UnauthorizedPage'
+import LoginPage from '@features/auth/pages/LoginPage'
+import SignupPage from '@features/auth/pages/SignupPage'
+import UnauthorizedPage from '@features/auth/pages/UnauthorizedPage'
 
 // Dashboard pages
-import LandingPage from '@/features/dashboard/pages/LandingPage'
-import HomePage from '@/features/dashboard/pages/HomePage'
+import LandingPage from '@features/dashboard/pages/LandingPage'
+import HomePage from '@features/dashboard/pages/HomePage'
 
 // Session pages
-import SessionsPage from '@/features/sessions/pages/SessionsPage'
-import AddSessionPage from '@/features/sessions/pages/AddSessionPage'
-import EditSessionPage from '@/features/sessions/pages/EditSessionPage'
+import SessionsPage from '@features/sessions/pages/SessionsPage'
+import AddSessionPage from '@features/sessions/pages/AddSessionPage'
+import EditSessionPage from '@features/sessions/pages/EditSessionPage'
 
 // Profile pages
-import AccountPage from '@/features/profile/pages/AccountPage'
+import AccountPage from '@features/profile/pages/AccountPage'
 
 // Assessment pages
-import AptitudePage from '@/features/assessment/pages/AptitudePage'
-import LogicalReasoningPage from '@/features/assessment/pages/LogicalReasoningPage'
-import VerbalAbilityPage from '@/features/assessment/pages/VerbalAbilityPage'
-import MockTestPage from '@/features/assessment/pages/MockTestPage'
+import AptitudePage from '@features/assessment/pages/AptitudePage'
+import LogicalReasoningPage from '@features/assessment/pages/LogicalReasoningPage'
+import VerbalAbilityPage from '@features/assessment/pages/VerbalAbilityPage'
+import MockTestPage from '@features/assessment/pages/MockTestPage'
 
 // Core subject pages
-import CoreSubjectPage from '@/features/core-subjects/pages/CoreSubjectPage'
+import CoreSubjectPage from '@features/core-subjects/pages/CoreSubjectPage'
 
 // Rankings pages
-import RankingsPage from '@/features/rankings/pages/RankingsPage'
+import RankingsPage from '@features/rankings/pages/RankingsPage'
 
 // Roadmap pages
-import RoadmapPage from '@/features/roadmap/pages/RoadmapPage'
-import RoadmapViewPage from '@/features/roadmap/pages/RoadmapViewPage'
-import RoadmapCalendarPage from '@/features/roadmap/pages/RoadmapCalendarPage'
+import RoadmapPage from '@features/roadmap/pages/RoadmapPage'
+import RoadmapViewPage from '@features/roadmap/pages/RoadmapViewPage'
+import RoadmapCalendarPage from '@features/roadmap/pages/RoadmapCalendarPage'
 
 // Buganizer pages
-import BuganizerPage from '@/features/buganizer/pages/BuganizerPage'
+import BuganizerPage from '@features/buganizer/pages/BuganizerPage'
 
 // Admin pages
-import AdminProblemsPage from '@/features/admin/pages/AdminProblemsPage'
-import AddProblemPage from '@/features/admin/pages/AddProblemPage'
-import EditProblemPage from '@/features/admin/pages/EditProblemPage'
-import AdminDashboardPage from '@/features/admin/pages/AdminDashboardPage'
-import AdminBuganizerPage from '@/features/admin/pages/AdminBuganizerPage'
-import AdminNotificationsPage from '@/features/admin/pages/AdminNotificationsPage'
-import AdminSessionsPage from '@/features/admin/pages/AdminSessionsPage'
-import AdminUsersPage from '@/features/admin/pages/AdminUsersPage'
+import AdminProblemsPage from '@features/admin/pages/AdminProblemsPage'
+import AddProblemPage from '@features/admin/pages/AddProblemPage'
+import EditProblemPage from '@features/admin/pages/EditProblemPage'
+import AdminDashboardPage from '@features/admin/pages/AdminDashboardPage'
+import AdminBuganizerPage from '@features/admin/pages/AdminBuganizerPage'
+import AdminNotificationsPage from '@features/admin/pages/AdminNotificationsPage'
+import AdminSessionsPage from '@features/admin/pages/AdminSessionsPage'
+import AdminUsersPage from '@features/admin/pages/AdminUsersPage'
 
-import { LoadingSpinner } from '@/components/ui';
+import { LoadingSpinner } from '@shared/components/ui';
 
 // Lazy-loaded components for better performance
-const ProblemPage = lazy(() => import('@/features/problems/pages/ProblemPage'))
-const ProblemSubmitPage = lazy(() => import('@/features/problems/pages/ProblemSubmitPage'))
-const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'))
-const EditorialPage = lazy(() => import('@/features/problems/pages/EditorialPage'))
+const ProblemPage = lazy(() => import('@features/problems/pages/ProblemPage'))
+const ProblemSubmitPage = lazy(() => import('@features/problems/pages/ProblemSubmitPage'))
+const ProfilePage = lazy(() => import('@features/profile/pages/ProfilePage'))
+const EditorialPage = lazy(() => import('@features/problems/pages/EditorialPage'))
 
 function App() {
   return (

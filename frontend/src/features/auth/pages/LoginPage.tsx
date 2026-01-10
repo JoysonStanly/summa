@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from "@/shared/hooks/useAuth";
-import { useToast } from '@/shared/hooks/ToastContext';
+import { useAuth } from "@shared/hooks/useAuth";
+import { useToast } from '@shared/hooks/ToastContext';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import '@/styles/Auth.css';
 

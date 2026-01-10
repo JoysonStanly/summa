@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useContext, type ReactNode } from 'react';
 import { authApi, type User } from '../services/authService';
-import { useUserStore } from '@/store/userStore';
+import { useUserStore } from '@features/profile/store/userStore';
 
 interface AuthContextType {
   user: User | null;

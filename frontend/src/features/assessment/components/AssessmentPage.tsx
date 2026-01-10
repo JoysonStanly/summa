@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import UnifiedSidebar from "@/shared/components/layout/UnifiedSidebar";
+import UnifiedSidebar from "@shared/components/layout/UnifiedSidebar";
 import { quizService } from '../services/quizService';
 import type { AptitudeCategory } from '../data/types';
 

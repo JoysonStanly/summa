@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useToast } from '@/shared/hooks/ToastContext';
+import { useToast } from '@shared/hooks/ToastContext';
 import { ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

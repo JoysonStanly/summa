@@ -1,7 +1,7 @@
 import { type FC } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { type Session } from "../data/sessions";
-import { formatDate } from "@/shared/utils/dateUtils";
+import { formatDate } from "@shared/utils/dateUtils";
 
 interface PreviousSessionCardProps {
   session: Session;

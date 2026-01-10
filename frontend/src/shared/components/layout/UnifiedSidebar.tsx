@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AuthContext } from '@/features/auth/stores/AuthContext';
+import { AuthContext } from '@features/auth/stores/AuthContext';
 import { User, Settings, Bug, ListChecks, Bell, BellOff, LogOut, ChevronRight, FileText, Navigation, Home, ShieldCheck, Check, Loader, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 

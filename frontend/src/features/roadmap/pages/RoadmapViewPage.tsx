@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, CirclePlus, CircleMinus, RotateCcw, CirclePause, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { UnifiedSidebar } from "@/shared/components/layout";
+import { UnifiedSidebar } from "@shared/components/layout";
 
 interface TopicModule {
   id: string;

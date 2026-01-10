@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '@/shared/hooks/ToastContext';
+import { useToast } from '@shared/hooks/ToastContext';
 
 // ============================================================================
 // TYPES

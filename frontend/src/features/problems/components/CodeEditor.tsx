@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 're
 import Editor from '@monaco-editor/react'
 import type { Monaco, OnMount } from '@monaco-editor/react'
 import type { editor } from 'monaco-editor'
-import { useProblemStore } from '@/store/problemStore'
+import { useProblemStore } from '@features/problems/stores/problemStore'
 
 interface CodeEditorProps {
   problemId: string

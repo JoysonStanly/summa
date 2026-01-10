@@ -1,7 +1,7 @@
 import { type FC } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Award, Box } from 'lucide-react';
-import { ProgressCircle } from "@/shared/components/ui";
+import { ProgressCircle } from "@shared/components/ui";
 
 interface TrackCardProps {
   title: string;

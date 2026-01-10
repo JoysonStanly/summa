@@ -16,8 +16,8 @@ import {
   Twitter,
   LayoutDashboard
 } from 'lucide-react';
-import { useAuth } from '@/features/auth/stores/AuthContext';
-import { UserDropdown } from '@/shared/components/ui';
+import { useAuth } from '@features/auth/stores/AuthContext';
+import { UserDropdown } from '@shared/components/ui';
 
 const LandingPage = () => {
   const { user, isAuthenticated, logout } = useAuth();

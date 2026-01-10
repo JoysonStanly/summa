@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import Sidebar from "@/shared/components/layout/Sidebar";
-import { sessionService } from '@/features/sessions/services/sessionService';
-import { useToast } from '@/shared/hooks/ToastContext';
+import Sidebar from "@shared/components/layout/Sidebar";
+import { sessionService } from '@features/sessions/services/sessionService';
+import { useToast } from '@shared/hooks/ToastContext';
 
 const AddSessionPage: React.FC = () => {
   const navigate = useNavigate();

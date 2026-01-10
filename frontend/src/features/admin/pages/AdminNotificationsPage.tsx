@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, Send, Users, Clock, CheckCircle, ArrowLeft, Edit2, Trash2, Loader } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Sidebar from "@/shared/components/layout/Sidebar";
-import { useToast } from "@/shared/hooks/ToastContext";
+import Sidebar from "@shared/components/layout/Sidebar";
+import { useToast } from "@shared/hooks/ToastContext";
 
 interface Notification {
   id: string;

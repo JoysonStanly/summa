@@ -1,68 +1,89 @@
-import api from '@/services/api/axiosClient';
+import { api } from '@shared/api/axiosClient';
 
-export interface UserProgress {
+export interface ProgressRecord {
+  _id: string;
   userId: string;
-  problemsSolved: number;
-  totalSubmissions: number;
-  acceptedSubmissions: number;
-  streak: number;
-  lastActiveDate: string;
-  completedProblems: string[];
-  skillLevel?: Record<string, number>;
-}
-
-export interface ProgressUpdate {
-  problemId?: string;
-  action: 'solved' | 'attempted' | 'streak';
-  metadata?: any;
+  problemId: string;
+  moduleId?: string;
+  topicId?: string;
+  completed: boolean;
+  lastAttemptDate: string;
+  attempts: number;
+  timeSpent: number; // in seconds
+  submissions: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProgressStats {
   totalProblems: number;
-  easySolved: number;
-  mediumSolved: number;
-  hardSolved: number;
-  topicProgress: Record<string, number>;
-  recentActivity: Array<{
-    date: string;
-    problemsSolved: number;
-  }>;
+  completedProblems: number;
+  attemptedProblems: number;
+  completionRate: number;
 }
 
-export const progressService = {
-  // Get user progress (protected)
-  async getProgress(): Promise<UserProgress> {
-    try {
-      const response = await api.get<{ success: boolean; data: UserProgress }>('/progress');
-      return response.data.data;
-    } catch (error: any) {
-      console.error('Error fetching progress:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch progress');
-    }
+export interface ProgressResponse {
+  progress: ProgressRecord[];
+  stats: ProgressStats;
+}
+
+export interface StreakData {
+  currentStreak: number;
+  maxStreak: number;
+  dailyActivity: {
+    _id: string; // date in YYYY-MM-DD format
+    count: number;
+  }[];
+}
+
+/**
+ * Progress Service for tracking and retrieving user progress data
+ */
+const progressService = {
+  /**
+   * Get user progress for all problems
+   */
+  getUserProgress: async (userId: string): Promise<ProgressResponse> => {
+    const response = await api.get(`/progress/user/${userId}`);
+    return response.data.data;
   },
 
-  // Update progress (protected)
-  async updateProgress(update: ProgressUpdate): Promise<UserProgress> {
-    try {
-      const response = await api.post<{ success: boolean; data: UserProgress }>(
-        '/progress',
-        update
-      );
-      return response.data.data;
-    } catch (error: any) {
-      console.error('Error updating progress:', error);
-      throw new Error(error.response?.data?.message || 'Failed to update progress');
-    }
+  /**
+   * Get user progress for a specific module
+   */
+  getModuleProgress: async (userId: string, moduleId: string): Promise<ProgressResponse> => {
+    const response = await api.get(`/progress/user/${userId}/module/${moduleId}`);
+    return response.data.data;
   },
 
-  // Get progress statistics (protected)
-  async getStats(): Promise<ProgressStats> {
-    try {
-      const response = await api.get<{ success: boolean; data: ProgressStats }>('/progress/stats');
-      return response.data.data;
-    } catch (error: any) {
-      console.error('Error fetching stats:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch stats');
-    }
+  /**
+   * Get user progress for a specific topic
+   */
+  getTopicProgress: async (userId: string, topicId: string): Promise<ProgressResponse> => {
+    const response = await api.get(`/progress/user/${userId}/topic/${topicId}`);
+    return response.data.data;
   },
+
+  /**
+   * Update user progress for a problem
+   */
+  updateProgress: async (data: {
+    action: 'solved' | 'attempted' | 'streak';
+    problemId?: string;
+  }): Promise<any> => {
+    const response = await api.post('/progress', data);
+    return response.data.data;
+  },
+
+  /**
+   * Get user streak data
+   */
+  getUserStreak: async (userId: string): Promise<StreakData> => {
+    const response = await api.get(`/progress/streak/${userId}`);
+    return response.data.data;
+  }
 };
+
+// Named and default export
+export { progressService };
+export default progressService;

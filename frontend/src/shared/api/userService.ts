@@ -1,4 +1,4 @@
-import api from './axiosClient';
+import api from '@shared/api/axiosClient';
 
 export type UserRole = 'student' | 'instructor' | 'admin';
 export type UserStatus = 'active' | 'suspended' | 'pending';

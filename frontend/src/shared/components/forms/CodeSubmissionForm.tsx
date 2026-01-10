@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import submissionService from '@/features/problems/services/submissionService';
-import type { SubmissionResult } from '@/features/problems/services/submissionService';
+import submissionService from '@features/problems/services/submissionService';
+import type { SubmissionResult } from '@features/problems/services/submissionService';
 
 interface CodeSubmissionFormProps {
   problemId: string;

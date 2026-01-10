@@ -1,5 +1,5 @@
-import api from '@/services/api/axiosClient';
-import { apiCache } from '@/utils/apiCache';
+import api from '@shared/api/axiosClient';
+import { apiCache } from '@shared/utils/apiCache';
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   const maybeAxiosError = error as { response?: { data?: { message?: string } } };

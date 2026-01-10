@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useContext } from 'react';
-import { AuthContext } from "@/features/auth/stores/AuthContext";
+import { AuthContext } from "@features/auth/stores/AuthContext";
 
 const UnauthorizedPage = () => {
   const { user } = useContext(AuthContext);

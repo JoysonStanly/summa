@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { problemsApi } from '@/services/api/api';
+import { problemsApi } from '@shared/api/api';
 import { dsaTopics } from '../data/dsaTopics';
 
 interface Problem {

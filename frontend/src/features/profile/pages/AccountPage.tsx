@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useToast } from '@/shared/hooks/ToastContext';
+import { useToast } from '@shared/hooks/ToastContext';
 import { Settings, Users, SlidersVertical, Shield, MessageSquare, History, ChevronDown, Home, Link2, Copy, TrendingUp, Wallet, DollarSign, Calendar, Star, Monitor, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

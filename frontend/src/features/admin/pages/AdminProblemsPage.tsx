@@ -14,10 +14,10 @@ import {
   Clock,
   ArrowLeft
 } from 'lucide-react';
-import { Sidebar } from "@/shared/components/layout";
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { problemsApi } from '@/services/api/api';
-import { useToast } from '@/shared/hooks/ToastContext';
+import { Sidebar } from "@shared/components/layout";
+import LoadingSpinner from '@shared/components/ui/LoadingSpinner';
+import { problemsApi } from '@shared/api/api';
+import { useToast } from '@shared/hooks/ToastContext';
 
 interface Problem {
   id: string;

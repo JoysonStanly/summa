@@ -4,8 +4,8 @@ import { Calendar, Laptop, Users, Clock, Send, MessageCircle, Edit2, Trash2, Che
 import { type Session } from "../data/sessions";
 import { questionService, type Question } from '../services/questionService';
 import { sessionService } from '../services/sessionService';
-import { useToast } from '@/shared/hooks/ToastContext';
-import { useAuth } from '@/features/auth/stores/AuthContext';
+import { useToast } from '@shared/hooks/ToastContext';
+import { useAuth } from '@features/auth/stores/AuthContext';
 
 interface UpcomingSessionsProps {
   sessions: Session[];

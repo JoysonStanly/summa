@@ -61,5 +61,5 @@ const CategorySection = ({ title, viewAllLink, children }: CategorySectionProps)
     </section>
   );
 };
-
+export default CategorySection;
 export { CategorySection, SubjectCard };

@@ -1,4 +1,4 @@
-import api from './axiosClient';
+import api from '@shared/api/axiosClient';
 
 export type BugStatus = 'open' | 'in-progress' | 'resolved' | 'closed';
 export type BugPriority = 'low' | 'medium' | 'high' | 'critical';

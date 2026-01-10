@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Home, Settings, Bug, Calendar, ChevronDown, Plus, Eye, Trash2, BugOff, Clock, CircleCheckBig, MessageCircle, X, Upload, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { bugService, type BugPriority, type BugReport, type BugStatus } from '@/services/api/bugService';
+import { bugService, type BugPriority, type BugReport, type BugStatus } from '@shared/api/bugService';
 
 const BuganizerPage = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'open' | 'in-progress' | 'resolved' | 'closed'>('all');

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, Calendar as CalendarIcon, Info, RotateCcw } from 'lucide-react';
-import { UnifiedSidebar } from "@/shared/components/layout";
+import { UnifiedSidebar } from "@shared/components/layout";
 
 const RoadmapCalendarPage: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState('December');

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import submissionService from '@/features/problems/services/submissionService';
-import type { Submission, SubmissionStatus } from '@/features/problems/services/submissionService';
+import submissionService from '@features/problems/services/submissionService';
+import type { Submission, SubmissionStatus } from '@features/problems/services/submissionService';
 
 interface SubmissionHistoryProps {
   problemId: string;

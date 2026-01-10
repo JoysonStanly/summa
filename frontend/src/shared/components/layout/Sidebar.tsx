@@ -2,7 +2,7 @@ import { type FC, useState, useRef, useEffect, useContext } from 'react';
 import { Home, Book, Trophy, User, Brain, Settings, Bug, ListChecks, Bell, BellOff, LogOut, ChevronRight, ShieldCheck, Loader, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { AuthContext } from '@/features/auth/stores/AuthContext';
+import { AuthContext } from '@features/auth/stores/AuthContext';
 
 interface Notification {
   _id: string;

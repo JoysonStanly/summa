@@ -1,11 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useToast } from '@/shared/hooks/ToastContext';
-import { AuthContext } from "@/features/auth/stores/AuthContext";
+import { useToast } from '@shared/hooks/ToastContext';
+import { AuthContext } from "@features/auth/stores/AuthContext";
 import { profileService, type UserProfile, type ProfileStats, type ProfileActivity } from '../services/profileService';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import BottomNavigation from '@/shared/components/layout/BottomNavigation';
-import MobileTopBar from '@/shared/components/layout/MobileTopBar';
+import LoadingSpinner from '@shared/components/ui/LoadingSpinner';
+import BottomNavigation from '@shared/components/layout/BottomNavigation';
+import MobileTopBar from '@shared/components/layout/MobileTopBar';
 
 // Component imports
 import {

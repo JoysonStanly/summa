@@ -6,7 +6,7 @@ import {
   Activity, FileText, Plus
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sidebar } from "@/shared/components/layout";
+import { Sidebar } from "@shared/components/layout";
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate();

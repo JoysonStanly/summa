@@ -1,5 +1,5 @@
-import api from '@/services/api/axiosClient';
-import { apiCache } from '@/utils/apiCache';
+import api from '@shared/api/axiosClient';
+import { apiCache } from '@shared/utils/apiCache';
 
 // Types for leaderboard
 export interface LeaderboardUser {

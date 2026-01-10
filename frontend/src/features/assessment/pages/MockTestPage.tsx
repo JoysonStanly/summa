@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import UnifiedSidebar from "@/shared/components/layout/UnifiedSidebar";
+import UnifiedSidebar from "@shared/components/layout/UnifiedSidebar";
 import { mockTestCategories } from '../data/mockTestData';
 import { quizService } from '../services/quizService';
 

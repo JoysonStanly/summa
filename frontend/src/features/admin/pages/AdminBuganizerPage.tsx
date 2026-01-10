@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bug, Filter, Search, Clock, CheckCircle, XCircle, AlertTriangle, User, Calendar, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Sidebar from "@/shared/components/layout/Sidebar";
-import { bugService, type BugPriority, type BugReport, type BugStatus } from '@/services/api/bugService';
+import Sidebar from "@shared/components/layout/Sidebar";
+import { bugService, type BugPriority, type BugReport, type BugStatus } from '@shared/api/bugService';
 
 const AdminBuganizerPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');

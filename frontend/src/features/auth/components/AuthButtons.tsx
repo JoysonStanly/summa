@@ -1,7 +1,7 @@
 import { useContext } from 'react';
-import { useToast } from '@/shared/hooks/ToastContext';
+import { useToast } from '@shared/hooks/ToastContext';
 import { Link } from 'react-router-dom';
-import { AuthContext } from "@/features/auth/stores/AuthContext";
+import { AuthContext } from "@features/auth/stores/AuthContext";
 
 export const AuthButtons = () => {
   const { user, logout } = useContext(AuthContext);

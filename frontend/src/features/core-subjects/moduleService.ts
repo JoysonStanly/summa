@@ -1,4 +1,4 @@
-import { api } from './axiosClient';
+import { api } from '@shared/api/axiosClient';
 
 export interface Module {
   _id: string;

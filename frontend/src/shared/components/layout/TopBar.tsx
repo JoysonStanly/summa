@@ -1,6 +1,6 @@
 import { FC } from 'react';
-import { ThemeToggle } from "@/shared/components/ui";
-import { AuthButtons } from "@/features/auth/components/AuthButtons";
+import { ThemeToggle } from "@shared/components/ui";
+import { AuthButtons } from "@features/auth/components/AuthButtons";
 
 interface TopBarProps {
   day?: number;

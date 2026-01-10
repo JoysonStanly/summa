@@ -20,12 +20,12 @@ import {
   Link2,
   Code
 } from 'lucide-react';
-import { Sidebar } from "@/shared/components/layout";
-import ImageUpload from "@/shared/components/ui/ImageUpload";
-import { useToast } from "@/shared/hooks/ToastContext";
-import { dsaTopics, getSubtopicsForTopic } from "@/features/problems/data/dsaTopics";
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { problemsApi } from '@/services/api/api';
+import { Sidebar } from "@shared/components/layout";
+import ImageUpload from "@shared/components/ui/ImageUpload";
+import { useToast } from "@shared/hooks/ToastContext";
+import { dsaTopics, getSubtopicsForTopic } from "@features/problems/data/dsaTopics";
+import LoadingSpinner from '@shared/components/ui/LoadingSpinner';
+import { problemsApi } from '@shared/api/api';
 
 interface Example {
   input: string;

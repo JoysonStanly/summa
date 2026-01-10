@@ -1,4 +1,4 @@
-import api from '@/services/api/axiosClient';
+import api from '@shared/api/axiosClient';
 
 // Profile data interfaces
 export interface SocialLinks {

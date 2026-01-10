@@ -1,6 +1,6 @@
 import { type FC, useState } from 'react';
 import { ThumbsUp, ThumbsDown, Bug, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Example, Constraint } from "@/shared/types/problem";
+import type { Example, Constraint } from "@shared/types/problem";
 
 interface ProblemStatementProps {
   title: string;

@@ -15,8 +15,8 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-import UnifiedSidebar from "@/shared/components/layout/UnifiedSidebar";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import UnifiedSidebar from "@shared/components/layout/UnifiedSidebar";
+import LoadingSpinner from "@shared/components/ui/LoadingSpinner";
 import { findTopicByPath, findModuleByPath, findProblemByPath, getSubjectData, getDefaultRoute } from "../data/subjects";
 import type { Topic, Module, Subject } from "../data/subjects";
 import { subjectService } from '../services/subjectService';

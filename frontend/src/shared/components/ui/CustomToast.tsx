@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { X } from 'lucide-react';
-import '../../styles/CustomToast.css';
+import '../../../styles/CustomToast.css';
 
 
 export type ToastType = 'success' | 'error' | 'info';

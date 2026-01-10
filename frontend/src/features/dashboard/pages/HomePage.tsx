@@ -2,17 +2,17 @@ import { Database, LayoutGrid, Monitor, BookOpen, Server, Network, PackageOpen, 
 import type { LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Sidebar } from "@/shared/components/layout";
-import BottomNavigation from "@/shared/components/layout/BottomNavigation";
-import MobileTopBar from "@/shared/components/layout/MobileTopBar";
-import { TrackCard, CalendarWidget } from "@/features/sessions/components";
-import { CategorySection, SubjectCard } from "@/shared/components/ui";
-import DailyPlanner from "@/features/profile/components/DailyPlanner";
+import { Sidebar } from "@shared/components/layout";
+import BottomNavigation from "@shared/components/layout/BottomNavigation";
+import MobileTopBar from "@shared/components/layout/MobileTopBar";
+import { TrackCard, CalendarWidget } from "@features/sessions/components";
+import { CategorySection, SubjectCard } from "@shared/components/ui";
+import DailyPlanner from "@features/profile/components/DailyPlanner";
 import { useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { AuthContext } from "@/features/auth/stores/AuthContext";
-import { useUserStore } from '@/store/userStore';
-import leaderboardApi, { type LeaderboardUser } from '@/features/rankings/services/leaderboardService';
-import { apiCache } from '@/utils/apiCache';
+import { AuthContext } from "@features/auth/stores/AuthContext";
+import { useUserStore } from '@features/profile/store/userStore';
+import leaderboardApi, { type LeaderboardUser } from '@features/rankings/services/leaderboardService';
+import { apiCache } from '@shared/utils/apiCache';
 
 // Mock icons for subject cards
 const SubjectIcon = ({ icon: Icon, color }: { icon: LucideIcon; color: string }) => (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useToast } from '@/shared/hooks/ToastContext';
+import { useToast } from '@shared/hooks/ToastContext';
 import { motion } from 'framer-motion';
-import { userService, type User, type UserRole, type UserStatus } from '@/services/api/userService';
+import { userService, type User, type UserRole, type UserStatus } from '@shared/api/userService';
 import { 
   Search, 
   Filter, 
@@ -17,7 +17,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Sidebar } from "@/shared/components/layout";
+import { Sidebar } from "@shared/components/layout";
 
 const AdminUsersPage = () => {
   const { success: toastSuccess, error: toastError } = useToast();

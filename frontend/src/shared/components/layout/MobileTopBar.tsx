@@ -2,7 +2,7 @@ import { type FC, useState } from 'react';
 import { Menu, X, Home, Book, Trophy, User, Settings, Bug, ListChecks, LogOut, ShieldCheck } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/features/auth/stores/AuthContext';
+import { useAuth } from '@features/auth/stores/AuthContext';
 import { Code2 } from 'lucide-react';
 
 interface MobileTopBarProps {

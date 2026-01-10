@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback, useContext } from 'react';
 import { Search, Award, Star, Users, Clock, ChevronLeft, ChevronRight, User, Menu, Code2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Sidebar } from "@/shared/components/layout";
-import BottomNavigation from '@/shared/components/layout/BottomNavigation';
+import { Sidebar } from "@shared/components/layout";
+import BottomNavigation from '@shared/components/layout/BottomNavigation';
 import leaderboardApi from '../services/leaderboardService';
 import type { LeaderboardUser } from '../services/leaderboardService';
-import { AuthContext } from '@/features/auth/stores/AuthContext';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { AuthContext } from '@features/auth/stores/AuthContext';
+import LoadingSpinner from '@shared/components/ui/LoadingSpinner';
 
 const USERS_PER_PAGE = 10;
 

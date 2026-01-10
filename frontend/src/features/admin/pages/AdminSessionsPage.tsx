@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Plus, Clock, Users, Video, Edit, Trash2, Search, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import Sidebar from "@/shared/components/layout/Sidebar";
-import { sessionService } from '@/features/sessions/services/sessionService';
-import { useToast } from '@/shared/hooks/ToastContext';
+import Sidebar from "@shared/components/layout/Sidebar";
+import { sessionService } from '@features/sessions/services/sessionService';
+import { useToast } from '@shared/hooks/ToastContext';
 
 interface Session {
   id: string;

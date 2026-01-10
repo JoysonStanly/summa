@@ -10,10 +10,10 @@ import {
   FolderOpen,
   Plus
 } from 'lucide-react';
-import { Sidebar } from "@/shared/components/layout";
-import { useToast } from "@/shared/hooks/ToastContext";
-import { dsaTopics, getSubtopicsForTopic } from '@/features/problems/data/dsaTopics';
-import { problemsApi } from '@/services/api/api';
+import { Sidebar } from "@shared/components/layout";
+import { useToast } from "@shared/hooks/ToastContext";
+import { dsaTopics, getSubtopicsForTopic } from '@features/problems/data/dsaTopics';
+import { problemsApi } from '@shared/api/api';
 
 
 const AddProblemPage = () => {

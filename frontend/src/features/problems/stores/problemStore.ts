@@ -8,6 +8,14 @@ interface EditorConfig {
   language: string;
 }
 
+interface TestResult {
+  testCaseId: string;
+  passed: boolean;
+  actualOutput: string;
+  expectedOutput: string;
+  executionTime?: number;
+}
+
 interface ProblemState {
   problems: Problem[];
   currentProblem: Problem | null;
@@ -17,7 +25,9 @@ interface ProblemState {
   selectedLanguage: Record<string, string>;
   isLoading: boolean;
   isSubmitting: boolean;
+  isRunningTests: boolean;
   error: string | null;
+  testResults: TestResult[];
   lastSubmission: {
     status: ProblemStatus | null;
     runtime: string;
@@ -42,6 +52,8 @@ interface ProblemState {
     message?: string;
   }) => void;
   resetLastSubmission: () => void;
+  runTests: (problemId: string, code: string, language: string) => Promise<TestResult[]>;
+  clearTestResults: () => void;
 }
 
 const defaultEditorConfig: EditorConfig = {
@@ -61,7 +73,9 @@ export const useProblemStore = create<ProblemState>()((set, get) => ({
   selectedLanguage: {},
   isLoading: false,
   isSubmitting: false,
+  isRunningTests: false,
   error: null,
+  testResults: [],
   lastSubmission: {
     status: null,
     runtime: '0ms',
@@ -175,4 +189,37 @@ export const useProblemStore = create<ProblemState>()((set, get) => ({
       memory: '0MB',
     }
   }),
+
+  runTests: async (problemId: string, code: string, language: string) => {
+    set({ isRunningTests: true, error: null, testResults: [] });
+    try {
+      const { currentProblem } = get();
+      if (!currentProblem || !currentProblem.testCases) {
+        throw new Error('No test cases available');
+      }
+
+      // Mock test execution - simulate results
+      const results: TestResult[] = currentProblem.testCases.map(testCase => {
+        const passed = Math.random() > 0.3;
+        return {
+          testCaseId: testCase.id,
+          passed,
+          actualOutput: passed ? testCase.output : 'Wrong output',
+          expectedOutput: testCase.output,
+          executionTime: Math.floor(Math.random() * 100)
+        };
+      });
+
+      set({ testResults: results, isRunningTests: false });
+      return results;
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to run tests', 
+        isRunningTests: false 
+      });
+      throw error;
+    }
+  },
+
+  clearTestResults: () => set({ testResults: [] }),
 }));

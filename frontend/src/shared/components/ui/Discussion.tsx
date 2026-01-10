@@ -5,9 +5,9 @@ import {
   createDiscussion, 
   toggleLike,
   getUserDiscussions
-} from '@/services/api/discussionService';
-import type { Discussion as DiscussionType } from '@/services/api/discussionService';
-import { useAuth } from '@/features/auth/stores/AuthContext';
+} from '@shared/api/discussionService';
+import type { Discussion as DiscussionType } from '@shared/api/discussionService';
+import { useAuth } from '@features/auth/stores/AuthContext';
 
 interface DiscussionProps {
   problemId: string;

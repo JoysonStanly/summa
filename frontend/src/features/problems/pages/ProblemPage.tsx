@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import UnifiedSidebar from "@/shared/components/layout/UnifiedSidebar";
+import UnifiedSidebar from "@shared/components/layout/UnifiedSidebar";
 import { ProblemStatement, CodeEditor, TestCases, TestCaseDisplay, TestCasesSkeleton, Submissions } from '../components';
-import { LoadingSpinner, AlertDialog } from '@/components/ui';
+import { LoadingSpinner, AlertDialog } from '@shared/components/ui';
 // import { getProblem } from '../data/problems'; // OLD: Static data
 import {
   Play,
@@ -26,12 +26,12 @@ import {
   Sparkles
 } from 'lucide-react';
 import Editorial from '../editorial/Editorial';
-import Discussion from "@/shared/components/ui/Discussion";
-import NotesEditor from "@/shared/components/ui/NotesEditor";
-import Toast from "@/shared/components/ui/Toast";
-import { useProblemStore } from "@/store/problemStore";
+import Discussion from "@shared/components/ui/Discussion";
+import NotesEditor from "@shared/components/ui/NotesEditor";
+import Toast from "@shared/components/ui/Toast";
+import { useProblemStore } from "@features/problems/stores/problemStore";
 import submissionService from '../services/submissionService';
-import { useUserStore } from "@/store/userStore";
+import { useUserStore } from "@features/profile/store/userStore";
 import { useDSAProblems } from '../hooks/useDSAProblems';
 
 const ProblemPage = () => {

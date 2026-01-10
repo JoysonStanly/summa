@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
-import { AuthContext } from '@/features/auth/stores/AuthContext';
+import { AuthContext } from '@features/auth/stores/AuthContext';
 
 const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 

@@ -1,6 +1,6 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { progressService, type UserProgress as APIProgress, type ProgressStats } from '@/features/profile/services/progressService';
+import { progressService, type UserProgress as APIProgress, type ProgressStats } from '../services/progressService';
 
 // Local UI state (can be persisted)
 interface LocalUserState {
@@ -96,7 +96,7 @@ export const useUserStore = create<UserState>()(
             console.log('[userStore] Incrementing streakRefreshTrigger');
             set((state) => {
               const newTrigger = state.streakRefreshTrigger + 1;
-              console.log('[userStore] streakRefreshTrigger:', state.streakRefreshTrigger, '→', newTrigger);
+              console.log('[userStore] streakRefreshTrigger:', state.streakRefreshTrigger, 'ΓåÆ', newTrigger);
               return { streakRefreshTrigger: newTrigger };
             });
           }
@@ -114,7 +114,7 @@ export const useUserStore = create<UserState>()(
         console.log('[userStore] refreshStreak called manually');
         set((state) => {
           const newTrigger = state.streakRefreshTrigger + 1;
-          console.log('[userStore] Manual refresh - streakRefreshTrigger:', state.streakRefreshTrigger, '→', newTrigger);
+          console.log('[userStore] Manual refresh - streakRefreshTrigger:', state.streakRefreshTrigger, 'ΓåÆ', newTrigger);
           return { streakRefreshTrigger: newTrigger };
         });
       },

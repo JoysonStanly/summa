@@ -1,14 +1,14 @@
 import { type FC, useEffect, useState } from 'react';
-import { useToast } from '@/shared/hooks/ToastContext';
-import { Sidebar } from "@/shared/components/layout";
+import { useToast } from '@shared/hooks/ToastContext';
+import { Sidebar } from "@shared/components/layout";
 import { Menu, Code2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import BottomNavigation from '@/shared/components/layout/BottomNavigation';
-import { UpcomingSessions, PreviousSessions } from "@/features/sessions/components";
+import BottomNavigation from '@shared/components/layout/BottomNavigation';
+import { UpcomingSessions, PreviousSessions } from "@features/sessions/components";
 import { sessionService, type Session } from '../services/sessionService';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { apiCache } from '@/utils/apiCache';
+import LoadingSpinner from '@shared/components/ui/LoadingSpinner';
+import { apiCache } from '@shared/utils/apiCache';
 
 const SessionsPage: FC = () => {
   const { error: toastError } = useToast();
