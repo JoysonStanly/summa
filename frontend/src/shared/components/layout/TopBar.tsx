@@ -11,7 +11,7 @@ interface TopBarProps {
 
 const TopBar: FC<TopBarProps> = ({ day = 1, progress = 0, streak = 0, coins = 0 }) => {
   return (
-    <div className="flex items-center justify-between px-4 py-4">
+    <div className="flex items-center justify-between px-4 py-4 bg-transparent">
       <div className="flex items-center gap-4">
         {/* Day counter */}
         <div className="flex flex-col">
