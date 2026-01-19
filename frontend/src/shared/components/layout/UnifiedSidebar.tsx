@@ -705,7 +705,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
                 )}
                 <AnimatedNavItem icon={Settings} label="Account" to="/account" iconRotation="left" />
                 <AnimatedNavItem icon={Bug} label="Buganizer" to="/buganizer" iconRotation="right" />
-                <AnimatedNavItem icon={ListChecks} label="Sessions" to="/plus/sessions" iconRotation="none" />
+                <AnimatedNavItem icon={ListChecks} label="Sessions" to="/sessions" iconRotation="none" />
 
                 <div className="relative" ref={notificationRef}>
                   <button onClick={(e) => { 

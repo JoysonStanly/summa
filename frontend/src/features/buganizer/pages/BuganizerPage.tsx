@@ -16,13 +16,13 @@ const BuganizerPage = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Fetch user's own bug reports
+  // Fetch all bug reports (public)
   useEffect(() => {
     const fetchBugs = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await bugService.getMyBugReports();
+        const data = await bugService.getBugReports();
         setBugs(data);
       } catch (err) {
         console.error('Failed to fetch bugs:', err);

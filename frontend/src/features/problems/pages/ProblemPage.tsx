@@ -379,11 +379,11 @@ const ProblemPage = () => {
     return (
       <div className="flex h-screen bg-[#0a0a0a] text-white items-center justify-center">
         <div className="max-w-md text-center">
-          <div className="mb-4 text-6xl text-red-500">⚠️</div>
-          <h2 className="mb-2 text-2xl font-bold">Error Loading Problem</h2>
-          <p className="mb-6 text-gray-400">{problemError}</p>
+          <div className="mb-4 text-6xl text-yellow-400">🛠️</div>
+          <h2 className="mb-2 text-2xl font-bold">Content will update soon</h2>
+          <p className="mb-6 text-gray-400">This problem is not yet available. Please check back later!</p>
           <button
-            onClick={() => navigate('/dsa')}
+            onClick={() => navigate('/dsa/arrays/fundamentals/linear-search')}
             className="px-6 py-2 transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
           >
             Back to Problems
