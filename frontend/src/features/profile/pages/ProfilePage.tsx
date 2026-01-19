@@ -96,7 +96,6 @@ const ProfilePage: React.FC = () => {
             const { user: userData, stats } = await profileService.getMyProfile();
             setProfileData(userData);
             setProfileStats(stats);
-            
             // Fetch activity
             const activity = await profileService.getMyActivity();
             setActivityData(activity);
@@ -105,7 +104,6 @@ const ProfilePage: React.FC = () => {
             const { user: userData, stats } = await profileService.getProfileByUsername(decodedUsername);
             setProfileData(userData);
             setProfileStats(stats);
-            
             // Fetch activity for other user
             if (userData.id) {
               const activity = await profileService.getActivity(userData.id);
@@ -118,9 +116,24 @@ const ProfilePage: React.FC = () => {
           navigate(`/profile/${encodedUsername}`, { replace: true });
           return;
         } else {
-          // Not logged in and no username - redirect to login
-          navigate('/login', { replace: true });
-          return;
+          // Not logged in and no username - show guest profile
+          setIsOwnProfile(false);
+          setProfileData({
+            id: 'guest',
+            name: 'Guest User',
+            email: '',
+            avatar: '',
+            bio: 'Welcome to StudyIO! Sign up to track your progress.',
+            role: 'student',
+            // Add other required UserProfile fields with defaults
+          } as UserProfile);
+          setProfileStats({
+            problemsSolved: 0,
+            submissions: 0,
+            streak: 0,
+            // Add other required ProfileStats fields with defaults
+          } as ProfileStats);
+          setActivityData(null);
         }
       } catch (err: unknown) {
         console.error('Error loading profile:', err);
