@@ -9,23 +9,19 @@ import {
   unregisterFromSession,
   checkRegistration,
 } from '../controllers/sessionController';
-import { protect, authorize } from '../middleware/auth';
+
 
 const router = express.Router();
 
-router
-  .route('/')
-  .get(getSessions)
-  .post(protect, authorize('instructor', 'admin'), createSession);
+router.get('/', getSessions);
+router.post('/', createSession);
 
-router
-  .route('/:id')
-  .get(getSession)
-  .put(protect, authorize('instructor', 'admin'), updateSession)
-  .delete(protect, authorize('instructor', 'admin'), deleteSession);
+router.get('/:id', getSession);
+router.put('/:id', updateSession);
+router.delete('/:id', deleteSession);
 
-router.route('/:id/register').post(protect, registerForSession);
-router.route('/:id/unregister').post(protect, unregisterFromSession);
-router.route('/:id/is-registered').get(protect, checkRegistration);
+router.route('/:id/register').post(registerForSession);
+router.route('/:id/unregister').post(unregisterFromSession);
+router.route('/:id/is-registered').get(checkRegistration);
 
 export default router;

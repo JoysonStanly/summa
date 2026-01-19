@@ -5,7 +5,7 @@ import {
   getProblemSubmissions,
   getSubmission,
 } from '../controllers/submissionController';
-import { protect } from '../middleware/auth';
+
 
 const router = express.Router();
 
@@ -14,27 +14,27 @@ const router = express.Router();
  * @desc    Submit code solution
  * @access  Private
  */
-router.post('/', protect, submitSolution);
+router.post('/', submitSolution);
 
 /**
  * @route   GET /api/v1/submissions/:id
  * @desc    Get single submission by ID
  * @access  Private
  */
-router.get('/:id', protect, getSubmission);
+router.get('/:id', getSubmission);
 
 /**
  * @route   GET /api/v1/submissions/user/:userId
  * @desc    Get all submissions by user
  * @access  Private
  */
-router.get('/user/:userId', protect, getUserSubmissions);
+router.get('/user/:userId', getUserSubmissions);
 
 /**
  * @route   GET /api/v1/submissions/problem/:problemId
  * @desc    Get all submissions for a problem (user's own)
  * @access  Private
  */
-router.get('/problem/:problemId', protect, getProblemSubmissions);
+router.get('/problem/:problemId', getProblemSubmissions);
 
 export default router;

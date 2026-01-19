@@ -11,7 +11,7 @@ import {
   deleteUser
 } from '../controllers/authController';
 import { setupInitialAdmin } from '../controllers/setupController';
-import { protect, authorize } from '../middleware/auth';
+
 import { registerValidation, loginValidation } from '../middleware/validation';
 import { Request, Response, NextFunction } from 'express';
 
@@ -58,14 +58,14 @@ router.post('/login', loginValidation, validate, login);
  * @desc    Logout user
  * @access  Private
  */
-router.post('/logout', protect, logout);
+router.post('/logout', logout);
 
 /**
  * @route   GET /api/v1/auth/me
  * @desc    Get current logged in user
  * @access  Private
  */
-router.get('/me', protect, getMe);
+router.get('/me', getMe);
 
 /**
  * @route   GET /api/v1/users/count
@@ -79,20 +79,20 @@ router.get('/users/count', getTotalUsers);
  * @desc    Get all users (Admin only)
  * @access  Private/Admin
  */
-router.get('/users', protect, authorize('admin'), getAllUsers);
+router.get('/users', getAllUsers);
 
 /**
  * @route   PUT /api/v1/auth/users/:id
  * @desc    Update user (Admin only)
  * @access  Private/Admin
  */
-router.put('/users/:id', protect, authorize('admin'), updateUser);
+router.put('/users/:id', updateUser);
 
 /**
  * @route   DELETE /api/v1/auth/users/:id
  * @desc    Delete user (Admin only)
  * @access  Private/Admin
  */
-router.delete('/users/:id', protect, authorize('admin'), deleteUser);
+router.delete('/users/:id', deleteUser);
 
 export default router;

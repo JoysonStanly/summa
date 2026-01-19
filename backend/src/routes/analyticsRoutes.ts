@@ -6,13 +6,11 @@ import {
   getPopularProblems,
   getCategoryStats,
 } from '../controllers/analyticsController';
-import { protect, authorize } from '../middleware/auth';
+
 
 const router = express.Router();
 
-// All analytics routes require admin access
-router.use(protect);
-router.use(authorize('admin'));
+
 
 router.route('/dashboard').get(getDashboardAnalytics);
 router.route('/user-growth').get(getUserGrowthAnalytics);

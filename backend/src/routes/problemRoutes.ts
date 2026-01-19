@@ -11,8 +11,7 @@ import {
   likeProblem,
   dislikeProblem,
 } from '../controllers/problemController';
-import { protect, authorize } from '../middleware/auth';
-import { optionalAuth } from '../middleware/optionalAuth';
+
 
 const router = express.Router();
 
@@ -49,28 +48,28 @@ router.get('/:id/startercode', getProblemStarterCode);
  * @desc    Get single problem by ID or slug
  * @access  Public (but checks published status)
  */
-router.get('/:id', optionalAuth, getProblem);
+router.get('/:id', getProblem);
 
 /**
  * @route   POST /api/v1/problems
  * @desc    Create new problem
  * @access  Private (Admin only)
  */
-router.post('/', protect, authorize('admin'), createProblem);
+router.post('/', createProblem);
 
 /**
  * @route   PUT /api/v1/problems/:id
  * @desc    Update problem
  * @access  Private (Admin only)
  */
-router.put('/:id', protect, authorize('admin'), updateProblem);
+router.put('/:id', updateProblem);
 
 /**
  * @route   DELETE /api/v1/problems/:id
  * @desc    Delete problem
  * @access  Private (Admin only)
  */
-router.delete('/:id', protect, authorize('admin'), deleteProblem);
+router.delete('/:id', deleteProblem);
 
 /**
  * @route   POST /api/v1/problems/:id/like

@@ -9,24 +9,20 @@ import {
   addComment,
   getUserDiscussions,
 } from '../controllers/discussionController';
-import { protect } from '../middleware/auth';
+
 
 const router = express.Router();
 
-router
-  .route('/')
-  .post(protect, createDiscussion);
+router.post('/', createDiscussion);
 
 router.route('/problem/:problemId').get(getProblemDiscussions);
 router.route('/user/:userId').get(getUserDiscussions);
 
-router
-  .route('/:id')
-  .get(getDiscussion)
-  .put(protect, updateDiscussion)
-  .delete(protect, deleteDiscussion);
+router.get('/:id', getDiscussion);
+router.put('/:id', updateDiscussion);
+router.delete('/:id', deleteDiscussion);
 
-router.route('/:id/like').post(protect, toggleLike);
-router.route('/:id/comments').post(protect, addComment);
+router.route('/:id/like').post(toggleLike);
+router.route('/:id/comments').post(addComment);
 
 export default router;

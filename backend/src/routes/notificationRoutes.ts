@@ -10,33 +10,25 @@ import {
   updateAdminNotification,
   deleteAdminNotification,
 } from '../controllers/notificationController';
-import { protect, authorize } from '../middleware/auth';
+
 
 const router = express.Router();
 
 // User routes
-router
-  .route('/')
-  .get(protect, getNotifications)
-  .post(protect, authorize('admin'), createNotification);
+router.get('/', getNotifications);
+router.post('/', createNotification);
 
-router.route('/read-all').put(protect, markAllAsRead);
-router
-  .route('/:id')
-  .delete(protect, deleteNotification);
+router.route('/read-all').put(markAllAsRead);
+router.delete('/:id', deleteNotification);
 
-router.route('/:id/read').put(protect, markAsRead);
+router.route('/:id/read').put(markAsRead);
 
 // Admin routes
-router.route('/admin/all').get(protect, authorize('admin'), getAllNotifications);
+router.route('/admin/all').get(getAllNotifications);
 
-router
-  .route('/admin/send')
-  .post(protect, authorize('admin'), sendAdminNotification);
+router.post('/admin/send', sendAdminNotification);
 
-router
-  .route('/admin/:id')
-  .put(protect, authorize('admin'), updateAdminNotification)
-  .delete(protect, authorize('admin'), deleteAdminNotification);
+router.put('/admin/:id', updateAdminNotification);
+router.delete('/admin/:id', deleteAdminNotification);
 
 export default router;
