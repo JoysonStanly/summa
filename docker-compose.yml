@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: judge0-postgres
+    environment:
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0
+      POSTGRES_DB: judge0
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judge0"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: judge0-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  judge0:
+    image: judge0/judge0:latest
+
+    container_name: judge0-api
+    privileged: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: 2358
+      APP_PORT: 2358
+      WEB_CONCURRENCY: 1
+      RACK_ENV: development
+      RAILS_ENV: development
+      DATABASE_URL: postgres://judge0:judge0@postgres:5432/judge0
+      REDIS_URL: redis://redis:6379
+      ALLOW_ORIGIN: "*"
+      DISABLE_AUTO_UPDATE: "true"
+      AUTHENTICATION_ENABLED: "false"
+    ports:
+      - "2358:2358"
+    volumes:
+      - judge0_box:/box
+
+volumes:
+  postgres_data:
+  judge0_box:

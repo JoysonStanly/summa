@@ -59,8 +59,8 @@
     ]
   },
   "starterCode": {
-    "javascript": "var largestElement = function(nums) {\n  // Write your code here\n};",
-    "python": "class Solution:\n    def largestElement(self, nums):\n        # Write your code here\n        pass",
+    "javascript": "// Reads array from stdin and prints largest element\nconst readline = require('readline');\nconst rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });\nlet input = [];\nrl.on('line', function(line){ input.push(line); });\nrl.on('close', function(){\n  // Input is a single line: '[3,7,2,9,5]'\n  const nums = JSON.parse(input[0]);\n  let maxVal = nums[0];\n  for (let i = 1; i < nums.length; i++) {\n    if (nums[i] > maxVal) maxVal = nums[i];\n  }\n  console.log(maxVal);\n});",
+    "python": "# Reads array from stdin and prints largest element\nimport sys\ninput_line = sys.stdin.read().strip()\nnums = eval(input_line)\nmaxVal = nums[0]\nfor x in nums[1:]:\n    if x > maxVal:\n        maxVal = x\nprint(maxVal)",
     "cpp": "class Solution {\npublic:\n    int largestElement(vector<int>& nums) {\n        // Write your code here\n    }\n};",
     "java": "class Solution {\n    public int largestElement(int[] nums) {\n        // Write your code here\n    }\n}"
   },

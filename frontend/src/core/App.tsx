@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from '@shared/contexts/ThemeContext'
 import { AuthProvider } from '@features/auth/components/AuthProvider'
 import { ToastProvider } from '@shared/contexts/ToastContext'
-import { ProtectedRoute } from '@features/auth/components/ProtectedRoute'
+// import { ProtectedRoute } from '@features/auth/components/ProtectedRoute'
 
 // Auth pages
 import LoginPage from '@features/auth/pages/LoginPage'
@@ -11,7 +11,7 @@ import SignupPage from '@features/auth/pages/SignupPage'
 import UnauthorizedPage from '@features/auth/pages/UnauthorizedPage'
 
 // Dashboard pages
-import LandingPage from '@features/dashboard/pages/LandingPage'
+// import LandingPage from '@features/dashboard/pages/LandingPage'
 import HomePage from '@features/dashboard/pages/HomePage'
 
 // Session pages
@@ -68,14 +68,10 @@ function App() {
           <Router>
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-[#0a0a0a]"><LoadingSpinner /></div>}>
               <Routes>
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
-              <Route path="/home" element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              } />
+              <Route path="/home" element={<HomePage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               <Route path="/sessions" element={<SessionsPage />} />
               
@@ -87,11 +83,7 @@ function App() {
               <Route path="/dsa/:topicId/:subtopicId/:problemId" element={<ProblemPage />} />
               <Route path="/dsa/:topicId/:problemId" element={<ProblemPage />} />
               <Route path="/:topicId/:problemId/editorial" element={<EditorialPage />} />
-              <Route path="/problems/:problemId/submit" element={
-                <ProtectedRoute>
-                  <ProblemSubmitPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/problems/:problemId/submit" element={<ProblemSubmitPage />} />
               <Route path="/quiz" element={<AptitudePage />} />
               <Route path="/quiz/:categoryId/:subCategoryId" element={<AptitudePage />} />
               <Route path="/logical-reasoning" element={<LogicalReasoningPage />} />
@@ -104,68 +96,20 @@ function App() {
               <Route path="/dsa/roadmap" element={<RoadmapPage />} />
               <Route path="/dsa/roadmap/calendar" element={<RoadmapCalendarPage />} />
               <Route path="/dsa/roadmap/view" element={<RoadmapViewPage />} />
-              <Route path="/account" element={
-                <ProtectedRoute>
-                  <AccountPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/buganizer" element={
-                <ProtectedRoute>
-                  <BuganizerPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/account" element={<AccountPage />} />
+              <Route path="/buganizer" element={<BuganizerPage />} />
               
-              {/* Admin Routes - Require admin role */}
-              <Route path="/admin" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboardPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/problems" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminProblemsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/problems/new" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AddProblemPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/problems/:problemId/edit" element={
-                <ProtectedRoute requiredRole="admin">
-                  <EditProblemPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/buganizer" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminBuganizerPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/notifications" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminNotificationsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/sessions" element={
-                <ProtectedRoute>
-                  <AdminSessionsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/sessions/new" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AddSessionPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/sessions/:sessionId/edit" element={
-                <ProtectedRoute requiredRole="admin">
-                  <EditSessionPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/users" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminUsersPage />
-                </ProtectedRoute>
-              } />
+              {/* Admin Routes - No auth for MVP */}
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/admin/problems" element={<AdminProblemsPage />} />
+              <Route path="/admin/problems/new" element={<AddProblemPage />} />
+              <Route path="/admin/problems/:problemId/edit" element={<EditProblemPage />} />
+              <Route path="/admin/buganizer" element={<AdminBuganizerPage />} />
+              <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+              <Route path="/admin/sessions" element={<AdminSessionsPage />} />
+              <Route path="/admin/sessions/new" element={<AddSessionPage />} />
+              <Route path="/admin/sessions/:sessionId/edit" element={<EditSessionPage />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
               
               <Route path="/:subjectId" element={<CoreSubjectPage />} />
               <Route path="/:subjectId/:moduleId/:topicId" element={<CoreSubjectPage />} />

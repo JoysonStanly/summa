@@ -31,6 +31,7 @@ import NotesEditor from "@shared/components/ui/NotesEditor";
 import Toast from "@shared/components/ui/Toast";
 import { useProblemStore } from "@features/problems/stores/problemStore";
 import submissionService from '../services/submissionService';
+import problemService from '../services/problemService';
 import { useUserStore } from "@features/profile/store/userStore";
 import { useDSAProblems } from '../hooks/useDSAProblems';
 
@@ -623,7 +624,7 @@ const ProblemPage = () => {
                     onClick={async () => {
                       try {
                         console.log('Run button clicked');
-                        const code = ''; // Get code from editor
+                        const code = editorContent[actualProblemId] || defaultCode; // Get code from editor
                         
                         // Show skeleton immediately
                         setShowSkeleton(true);
@@ -662,39 +663,29 @@ const ProblemPage = () => {
                       try {
                         // 🎯 Auto-switch to Submissions tab when Submit is clicked (like LeetCode)
                         navigate(`/dsa/${topicId}/${subtopicId || actualProblemId}/${actualProblemId}?tab=submissions`);
-                        
-                        // 🎯 Show loading state for 3 seconds minimum
                         setIsSubmitting(true);
                         setLatestSubmission(null); // Clear previous submission
-                        
-                        // Run submission in background
-                        const submissionPromise = submissionService.runLocally(
-                          problem?.testCases || [],
-                          '',
-                          language,
-                          actualProblemId
-                        );
-                        
-                        // Wait for 3 seconds minimum for loading animation
-                        const [result] = await Promise.all([
-                          submissionPromise,
-                          new Promise(resolve => setTimeout(resolve, 3000))
-                        ]);
-                        
-                        // 🎯 Store submission result to display in Submissions tab
+                        const code = editorContent[actualProblemId] || defaultCode;
+                        const problemIdToSend = problem?._id || actualProblemId;
+                        const submissionData = {
+                          problemId: problemIdToSend,
+                          code,
+                          language
+                        };
+                        // Only use the delayed mock for loading effect
+                        const result = await problemService.submitSolution(submissionData);
+                        // Add a 5 second delay before showing the result (in addition to any mock delay)
+                        await new Promise(res => setTimeout(res, 2000));
                         setLatestSubmission({
                           status: result.status === 'accepted' ? 'Accepted' : 'Wrong Answer',
-                          testCasesPassed: result.passedTests || 0,
+                          testCasesPassed: result.testResults?.filter((t: any) => t.passed).length || 0,
                           totalTestCases: problem?.testCases?.length || 0,
-                          memoryUsed: '2.83 KiB',
+                          memoryUsed: result.memory ? `${result.memory} KB` : '',
                           language: language,
                           timestamp: new Date().toISOString()
                         });
-                        
                         setIsSubmitting(false);
-                        
                         if (result.status === 'accepted') {
-                          // Update progress via API
                           await updateProgress('solved', actualProblemId);
                         }
                       } catch (error) {
@@ -825,7 +816,7 @@ const ProblemPage = () => {
                             testResults={testResults}
                             onRunTests={async () => {
                               try {
-                                const code = '';
+                                const code = editorContent[actualProblemId] || defaultCode;
                                 setShowSkeleton(true);
                                 setShowTestResults(false);
                                 
@@ -1375,7 +1366,7 @@ const ProblemPage = () => {
               onClick={async () => {
                 try {
                   console.log('Run button clicked');
-                  const code = '';
+                  const code = editorContent[actualProblemId] || defaultCode;
                   setShowSkeleton(true);
                   setShowTestResults(false);
                   const testPromise = runTests(actualProblemId, code, language);
@@ -1405,7 +1396,7 @@ const ProblemPage = () => {
                 try {
                   const result = await submissionService.runLocally(
                     problem?.testCases || [],
-                    '',
+                    editorContent[actualProblemId] || defaultCode,
                     language,
                     actualProblemId
                   );

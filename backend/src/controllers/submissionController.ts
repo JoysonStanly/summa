@@ -15,8 +15,26 @@ import { loadProblemJSON } from '../utils/jsonLoader';
  */
 export const submitSolution = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+
     const { problemId, code, language } = req.body;
     const userId = req.user?._id;
+
+    // Validate code and language
+    if (!code || typeof code !== 'string' || code.trim() === '') {
+      res.status(400).json({
+        success: false,
+        message: 'Submitted code is empty. Please provide a valid solution.',
+      });
+      return;
+    }
+    const validLanguages = ['javascript', 'python', 'cpp', 'java'];
+    if (!language || !validLanguages.includes(language)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid language selected. Please choose a supported language.',
+      });
+      return;
+    }
 
     if (!userId) {
       res.status(401).json({
@@ -61,28 +79,33 @@ export const submitSolution = async (req: AuthRequest, res: Response): Promise<v
       const input = testCase.input.join('\n');
       const expectedOutput = testCase.output;
 
-      const result = await judge0Service.executeCode(
+      const exec = await judge0Service.runByLanguageKey(
         code,
-        language,
-        input,
-        expectedOutput
+        language as any,
+        input
       );
 
+      const normalize = (s?: string) => (s ?? '').replace(/\r\n/g, '\n').trim();
+      const expectedNorm = normalize(expectedOutput);
+      const actualNorm = normalize(exec.stdout);
+      // Removed verbose console logs for test case mismatches
+      const passed = exec.stderr ? false : actualNorm === expectedNorm;
+
       testResults.push({
-        passed: result.passed,
+        passed,
         input: testCase.isHidden ? undefined : input,
         expected: testCase.isHidden ? undefined : expectedOutput,
-        actual: testCase.isHidden ? undefined : result.output,
-        error: result.error,
-        executionTime: result.time,
+        actual: testCase.isHidden ? undefined : actualNorm,
+        error: exec.stderr || undefined,
+        executionTime: exec.time,
       });
 
-      if (!result.passed) {
+      if (!passed) {
         allPassed = false;
       }
 
-      totalTime += result.time;
-      totalMemory = Math.max(totalMemory, result.memory);
+      totalTime += exec.time;
+      totalMemory = Math.max(totalMemory, exec.memory);
     }
 
     // Determine submission status

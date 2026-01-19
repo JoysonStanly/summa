@@ -23,6 +23,7 @@ import discussionRoutes from './routes/discussionRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import rankingsRoutes from './routes/rankingsRoutes';
 import questionRoutes from './routes/questionRoutes';
+import executeRoutes from './routes/executeRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -105,6 +106,7 @@ app.use('/api/v1/discussions', discussionRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/rankings', rankingsRoutes);
 app.use('/api/v1', questionRoutes);
+app.use('/api/v1/execute', executeRoutes);
 
 // Health check route
 app.get('/health', (_req: Request, res: Response) => {

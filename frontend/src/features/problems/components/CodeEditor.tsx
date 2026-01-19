@@ -89,10 +89,8 @@ const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(({
     }
   }));
 
-  // Simulated Zustand logic
-  const updateEditorContent = (id: string, content: string) => {
-    console.log(`Updating content for problem ${id}:`, content)
-  }
+  // Use real Zustand store to update editor content
+  const { updateEditorContent } = useProblemStore();
 
   useEffect(() => {
     updateEditorContent(problemId, code)

@@ -64,10 +64,10 @@
     ]
   },
   "starterCode": {
-    "javascript": "var linearSearch = function(nums, target) {\n  // Write your code here\n};",
-    "python": "class Solution:\n    def linearSearch(self, nums, target):\n        # Write your code here\n        pass",
-    "cpp": "class Solution {\npublic:\n    int linearSearch(vector<int>& nums, int target) {\n        // Write your code here\n    }\n};",
-    "java": "class Solution {\n    public int linearSearch(int[] nums, int target) {\n        // Write your code here\n    }\n}"
+    "javascript": "var linearSearch = function(nums, target) {\n  // Write your code here\n  // Remember: print the result using console.log\n};",
+    "python": "class Solution:\n    def linearSearch(self, nums, target):\n        # Write your code here\n        # Remember: print the result using print()\n        pass",
+    "cpp": "class Solution {\npublic:\n    int linearSearch(vector<int>& nums, int target) {\n        // Write your code here\n}\n};",
+       "java": "class Solution {\n    public int linearSearch(int[] nums, int target) {\n        // Write your code here\n     }\n}"
   },
   "testCases": [
     {
