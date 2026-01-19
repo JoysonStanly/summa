@@ -47,11 +47,7 @@ api.interceptors.response.use(
                          window.location.pathname === '/';
       const isAuthCheck = config?.url?.includes('/auth/me');
       
-      if (!isAuthPage && !isAuthCheck) {
-        // Unauthorized - redirect to login only if not on auth pages
-        console.error('[API] Unauthorized - redirecting to login');
-        window.location.href = '/login';
-      }
+        // Removed forced redirect to /login on 401 errors
     } else if (response?.status === 403) {
       console.error('[API] Forbidden - insufficient permissions');
     } else if (response?.status === 404) {
