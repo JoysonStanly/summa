@@ -87,7 +87,11 @@ const ProfilePage: React.FC = () => {
       try {
         if (urlUsername) {
           // Viewing profile by username in URL
-          const decodedUsername = decodeURIComponent(urlUsername);
+          let decodedUsername = decodeURIComponent(urlUsername);
+          // Substitute 'User' with 'joy' for MVP demo
+          if (decodedUsername.toLowerCase() === 'user') {
+            decodedUsername = 'joy';
+          }
           const isOwn = user && (user.name === decodedUsername || user.email === decodedUsername);
           setIsOwnProfile(!!isOwn);
 
@@ -319,13 +323,13 @@ const ProfilePage: React.FC = () => {
       {/* Mobile Profile Drawer Overlay */}
       {showMobileProfile && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          className="fixed inset-0 z-40 lg:hidden bg-black/60 backdrop-blur-sm"
           onClick={() => setShowMobileProfile(false)}
         />
       )}
       
       {/* Main content area */}
-      <div className="flex flex-1 relative">
+      <div className="relative flex flex-1">
         {/* Left Sidebar - Desktop: always visible, Mobile: slide-in drawer */}
         <div className={`
           fixed lg:static inset-y-0 left-0 z-50
@@ -360,7 +364,7 @@ const ProfilePage: React.FC = () => {
           {/* Mobile Profile Header - Compact Info */}
           <div className="lg:hidden mb-3 bg-gradient-to-r from-[#1a1a1a] to-[#252525] rounded-xl p-4 border border-[#2a2a2a] shadow-lg">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center justify-center flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-pink-500">
                 <span className="text-xl font-bold text-white">
                   {profileData.name.charAt(0).toUpperCase()}
                 </span>
@@ -382,7 +386,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           {/* Top section - progress cards */}
-          <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6 mb-3 sm:mb-4 lg:mb-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 mb-3 sm:gap-4 lg:gap-6 sm:mb-4 lg:mb-6 md:grid-cols-2">
             <DSAProgress stats={dsaStats} />
             <OtherSubjects subjects={subjectProgressData} />
           </div>
