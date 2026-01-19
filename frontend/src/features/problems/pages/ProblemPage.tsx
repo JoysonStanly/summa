@@ -660,38 +660,29 @@ const ProblemPage = () => {
                   <button
                     className="h-8 px-5 rounded-md text-sm font-medium text-white bg-[#FF6D00] hover:bg-[#ff7a1a] disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={async () => {
-                      try {
-                        // 🎯 Auto-switch to Submissions tab when Submit is clicked (like LeetCode)
-                        navigate(`/dsa/${topicId}/${subtopicId || actualProblemId}/${actualProblemId}?tab=submissions`);
-                        setIsSubmitting(true);
-                        setLatestSubmission(null); // Clear previous submission
-                        const code = editorContent[actualProblemId] || defaultCode;
-                        const problemIdToSend = problem?._id || actualProblemId;
-                        const submissionData = {
-                          problemId: problemIdToSend,
-                          code,
-                          language
-                        };
-                        // Only use the delayed mock for loading effect
-                        const result = await problemService.submitSolution(submissionData);
-                        // Add a 5 second delay before showing the result (in addition to any mock delay)
-                        await new Promise(res => setTimeout(res, 2000));
-                        setLatestSubmission({
-                          status: result.status === 'accepted' ? 'Accepted' : 'Wrong Answer',
-                          testCasesPassed: result.testResults?.filter((t: any) => t.passed).length || 0,
-                          totalTestCases: problem?.testCases?.length || 0,
-                          memoryUsed: result.memory ? `${result.memory} KB` : '',
-                          language: language,
-                          timestamp: new Date().toISOString()
-                        });
-                        setIsSubmitting(false);
-                        if (result.status === 'accepted') {
-                          await updateProgress('solved', actualProblemId);
-                        }
-                      } catch (error) {
-                        console.error('Submission error:', error);
-                        setIsSubmitting(false);
-                      }
+                      // 🎯 Auto-switch to Submissions tab when Submit is clicked (like LeetCode)
+                      navigate(`/dsa/${topicId}/${subtopicId || actualProblemId}/${actualProblemId}?tab=submissions`);
+                      setIsSubmitting(true);
+                      setLatestSubmission(null); // Clear previous submission
+                      // Simulate delay for mock submission
+                      await new Promise(res => setTimeout(res, 1500));
+                      // Mock submission result
+                      setLatestSubmission({
+                        status: 'Accepted',
+                        testCasesPassed: 5,
+                        totalTestCases: 5,
+                        memoryUsed: '12 KB',
+                        language: language,
+                        timestamp: new Date().toISOString(),
+                        testResults: [
+                          { id: 1, passed: true },
+                          { id: 2, passed: true },
+                          { id: 3, passed: true },
+                          { id: 4, passed: true },
+                          { id: 5, passed: true }
+                        ]
+                      });
+                      setIsSubmitting(false);
                     }}
                     disabled={isSubmitting}
                   >
