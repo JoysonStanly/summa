@@ -1,5 +1,5 @@
 // types.ts
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 export interface MenuItem {
   id: string;
@@ -72,6 +72,7 @@ export interface CodeTabsProps {
   solutions: Record<string, string>;
   activeLanguage: string;
   onLanguageChange: (language: string) => void;
+  problemId?: string;
 }
 
 export interface SectionProps {

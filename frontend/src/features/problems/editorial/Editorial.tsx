@@ -21,7 +21,7 @@ const Editorial: FC<EditorialProps> = ({
   const [activeLanguage, setActiveLanguage] = useState<string>(firstAvailableLanguage);
   const [internalShowStudyView, setInternalShowStudyView] = useState(false);
   const showStudyView = externalShowStudyView ?? internalShowStudyView;
-  
+
   const [activeSolutionType, setActiveSolutionType] = useState<SolutionType>(
     solutionTypes && solutionTypes.length > 0 ? solutionTypes[0] : 'brute'
   );
@@ -32,7 +32,7 @@ const Editorial: FC<EditorialProps> = ({
   const [videoPosition, setVideoPosition] = useState({ top: 150, left: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ y: 0, startTop: 0 });
-  
+
   const handleDragStart = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragStart({ y: e.clientY, startTop: videoPosition.top });
@@ -48,7 +48,7 @@ const Editorial: FC<EditorialProps> = ({
   const handleDragEnd = () => {
     setIsDragging(false);
   };
-  
+
   const handleStudyViewToggle = (newValue: boolean) => {
     if (onStudyViewChange) {
       onStudyViewChange(newValue);
@@ -85,9 +85,8 @@ const Editorial: FC<EditorialProps> = ({
                         <button
                           type="button"
                           onClick={() => setActiveSolutionType(type)}
-                          className={`text-xs sm:text-sm cursor-pointer transition-colors max-w-[120px] sm:max-w-[140px] truncate text-left py-1.5 px-2 sm:px-3 rounded ${
-                            activeSolutionType === type ? 'text-white bg-zinc-700/50' : 'text-zinc-400'
-                          }`}
+                          className={`text-xs sm:text-sm cursor-pointer transition-colors max-w-[120px] sm:max-w-[140px] truncate text-left py-1.5 px-2 sm:px-3 rounded ${activeSolutionType === type ? 'text-white bg-zinc-700/50' : 'text-zinc-400'
+                            }`}
                         >
                           {solutionLabels[type]}
                         </button>
@@ -112,8 +111,8 @@ const Editorial: FC<EditorialProps> = ({
                 <div className="flex items-center justify-end flex-shrink-0 gap-2 px-4 py-2">
                   <p className="text-sm text-grayText">Study View</p>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="sr-only peer"
                       checked={showStudyView}
                       onChange={(e) => handleStudyViewToggle(e.target.checked)}
@@ -182,6 +181,7 @@ const Editorial: FC<EditorialProps> = ({
                     solutions={solutions}
                     activeLanguage={activeLanguage}
                     onLanguageChange={setActiveLanguage}
+                    problemId={title}
                   />
                 </div>
 
@@ -237,7 +237,7 @@ const Editorial: FC<EditorialProps> = ({
                   spaceComplexity={spaceComplexity}
                 />
               </div>
-              
+
               {/* Mobile View */}
               <div className="flex flex-col w-full h-full overflow-y-auto md:hidden">
                 <div className="w-full py-3 px-4 bg-[var(--tab-content-bg)] border-b border-[var(--border)]">
@@ -248,20 +248,18 @@ const Editorial: FC<EditorialProps> = ({
                       role="switch"
                       aria-checked={showStudyView}
                       onClick={() => handleStudyViewToggle(false)}
-                      className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
-                        showStudyView ? 'bg-[#FF6D00] text-white' : 'bg-zinc-700 text-zinc-300'
-                      }`}
+                      className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${showStudyView ? 'bg-[#FF6D00] text-white' : 'bg-zinc-700 text-zinc-300'
+                        }`}
                     >
                       <span
-                        className={`w-4 h-4 rounded-full bg-white transition-transform duration-300 ${
-                          showStudyView ? 'translate-x-0' : '-translate-x-0'
-                        }`}
+                        className={`w-4 h-4 rounded-full bg-white transition-transform duration-300 ${showStudyView ? 'translate-x-0' : '-translate-x-0'
+                          }`}
                       />
                       <span>Study view</span>
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="flex-1 p-4 space-y-6 overflow-y-auto">
                   <div className="w-full aspect-video rounded-lg overflow-hidden bg-[var(--accent)]">
                     {videoUrl ? (
@@ -278,7 +276,7 @@ const Editorial: FC<EditorialProps> = ({
                       </div>
                     )}
                   </div>
-                  
+
                   {filteredSections.map((section, index) => (
                     <div key={index} className="space-y-3">
                       <h1 className="text-xl font-bold text-[var(--text)]">{section.title}:</h1>
@@ -301,23 +299,24 @@ const Editorial: FC<EditorialProps> = ({
                       )}
                     </div>
                   ))}
-                  
+
                   {dryRunImages && dryRunImages.length > 0 && (
                     <div className="space-y-3">
                       <h3 className="text-lg font-bold text-[var(--text)]">Dry Run</h3>
                       <ImageCarousel images={dryRunImages} />
                     </div>
                   )}
-                  
+
                   <div className="space-y-3">
                     <h3 className="text-lg font-bold text-[var(--text)]">Solution</h3>
                     <CodeTabs
                       solutions={solutions}
                       activeLanguage={activeLanguage}
                       onLanguageChange={setActiveLanguage}
+                      problemId={title}
                     />
                   </div>
-                  
+
                   <div className="pb-8 space-y-3">
                     <h3 className="text-lg font-bold text-[var(--text)]">Complexity Analysis</h3>
                     <div className="space-y-3">
@@ -439,7 +438,7 @@ const SplitPane: FC<SplitPaneProps> = ({
   }, [isResizing, leftWidthPercent]);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="react-split react-split--vertical"
       style={{ position: 'relative' }}
@@ -461,9 +460,9 @@ const SplitPane: FC<SplitPaneProps> = ({
               <div className="flex items-center justify-end flex-shrink-0 gap-3 px-2">
                 <p className="text-sm font-medium text-[var(--muted-foreground)]">Study View</p>
                 <label className="relative inline-flex items-center cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only peer" 
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
                     checked={showStudyView}
                     onChange={() => handleStudyViewToggle(false)}
                   />
@@ -475,7 +474,7 @@ const SplitPane: FC<SplitPaneProps> = ({
           </div>
 
           {/* Video Content Area */}
-          <div 
+          <div
             className="relative flex-1 px-2 overflow-hidden select-none"
             onMouseMove={handleDragMove}
             onMouseUp={handleDragEnd}
@@ -484,19 +483,19 @@ const SplitPane: FC<SplitPaneProps> = ({
           >
             <div className="relative flex flex-col items-center justify-center w-full h-full">
               {/* Video Player */}
-              <div 
+              <div
                 className={`w-full max-w-4xl px-2 py-1 absolute rounded-lg bg-[var(--accent)] gap-y-1 flex flex-col ${isDragging ? '' : 'transition-all duration-300 ease-out'} will-change-auto`}
                 style={{ top: `${videoPosition.top}px`, left: '50%', transform: 'translateX(-50%)' }}
               >
-                <div 
+                <div
                   className="drag-handle rounded-full flex flex-row justify-center items-center h-[8px] transition duration-200 cursor-ns-resize"
                   onMouseDown={handleDragStart}
                 >
                   <div className="rounded-full mx-auto w-8 h-[4px] bg-[var(--background)]"></div>
                 </div>
                 <div className="relative w-full overflow-hidden rounded-lg aspect-video">
-                  <div 
-                    className="absolute inset-0 z-20 pointer-events-auto" 
+                  <div
+                    className="absolute inset-0 z-20 pointer-events-auto"
                     style={{ pointerEvents: 'auto', boxShadow: 'rgba(0, 0, 0, 0.35) 0px -50px 36px -28px inset' }}
                   ></div>
                   <div className="w-full h-full">
@@ -568,11 +567,10 @@ const SplitPane: FC<SplitPaneProps> = ({
                       aria-checked={autoPlay}
                       data-state={autoPlay ? 'checked' : 'unchecked'}
                       onClick={() => setAutoPlay(!autoPlay)}
-                      className={`peer size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none cursor-pointer ${
-                        autoPlay 
-                          ? 'bg-[var(--brand)] border-[var(--brand)] text-white' 
+                      className={`peer size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none cursor-pointer ${autoPlay
+                          ? 'bg-[var(--brand)] border-[var(--brand)] text-white'
                           : 'border-[var(--border)] dark:bg-zinc-800/30'
-                      }`}
+                        }`}
                     >
                       {autoPlay && (
                         <span className="flex items-center justify-center text-current transition-none" style={{ pointerEvents: 'none' }}>
@@ -590,9 +588,9 @@ const SplitPane: FC<SplitPaneProps> = ({
       </div>
 
       {/* Resizer */}
-      <div 
-        role="Resizer" 
-        className="react-split__sash react-split__sash--vertical" 
+      <div
+        role="Resizer"
+        className="react-split__sash react-split__sash--vertical"
         style={{ left: `calc(${leftWidthPercent}% - 4px)` }}
         onMouseDown={handleResizeStart}
       >
@@ -602,8 +600,8 @@ const SplitPane: FC<SplitPaneProps> = ({
       </div>
 
       {/* Right Pane - Editorial Content */}
-      <div 
-        className="react-split__pane" 
+      <div
+        className="react-split__pane"
         style={{ width: `${100 - leftWidthPercent}%`, flexShrink: 0 }}
       >
         <div className="w-full h-full pl-1">
@@ -650,6 +648,7 @@ const SplitPane: FC<SplitPaneProps> = ({
                     solutions={solutions}
                     activeLanguage={activeLanguage}
                     onLanguageChange={setActiveLanguage}
+                    problemId={title}
                   />
                 </div>
 
